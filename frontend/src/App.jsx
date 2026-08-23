@@ -17,7 +17,7 @@ import AITutor from "./pages/AITutor";
 import Quiz from "./pages/Quiz";
 import Certificates from "./pages/Certificates";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "import.meta.env.VITE_API_URL";
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("access_token");

@@ -24,7 +24,7 @@ function Lesson() {
     const loadLesson = async () => {
       try {
         const response = await fetch(
-          `http://127.0.0.1:8000/api/lessons/${lessonId}`
+          `${import.meta.env.VITE_API_URL}/api/lessons/${lessonId}`
         );
 
         if (!response.ok) {
@@ -41,7 +41,7 @@ function Lesson() {
         if (token) {
           try {
             const progressResponse = await fetch(
-              "http://127.0.0.1:8000/api/progress/me",
+              `${import.meta.env.VITE_API_URL}/api/progress/me`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -111,7 +111,7 @@ function Lesson() {
       }
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/ai-tutor/ask",
+        `${import.meta.env.VITE_API_URL}/api/ai-tutor/ask`,
         {
           method: "POST",
 
@@ -189,7 +189,7 @@ function Lesson() {
       }
 
       const response = await fetch(
-        `http://127.0.0.1:8000/api/progress/complete/${lessonId}`,
+        `${import.meta.env.VITE_API_URL}/api/progress/complete/${lessonId}`,
         {
           method: "POST",
 
