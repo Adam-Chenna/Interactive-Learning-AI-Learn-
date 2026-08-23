@@ -45,6 +45,14 @@ app.add_middleware(
 
 
 Base.metadata.create_all(bind=engine)
+
+from seed import seed_courses
+from seed_content import seed_content
+
+seed_courses()
+seed_content()
+
+
 app.include_router(auth_router)
 app.include_router(course_router)
 app.include_router(lesson_router)
