@@ -17,6 +17,12 @@ function Login() {
     setLoading(true);
 
     try {
+
+      console.log(
+        "API URL:",
+        import.meta.env.VITE_API_URL
+);
+
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/auth/login`,
         {
