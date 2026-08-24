@@ -116,8 +116,9 @@
       #c7d2fe
     );
 
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background-clip: text;
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
 }
 
 .quiz-heading p {
@@ -744,8 +745,9 @@
       #c084fc
     );
 
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background-clip: text;
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
 }
 
 .result-score span {

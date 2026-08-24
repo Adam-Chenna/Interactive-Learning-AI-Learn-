@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import "./Quiz.css";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (
+  import.meta.env.VITE_API_URL ||
+  "http://127.0.0.1:8000"
+).replace(/\/$/, "");
 
 function Quiz() {
   const { lessonId } = useParams();
-  const navigate = useNavigate();
 
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -22,48 +25,9 @@ function Quiz() {
 
   const [error, setError] = useState("");
 
-  // =====================================================
-  // GET TOKEN
-  // =====================================================
-
-  const getToken = () => {
-    const token = localStorage.getItem("access_token");
-
-    if (
-      !token ||
-      token === "undefined" ||
-      token === "null"
-    ) {
-      return null;
-    }
-
-    return token;
-  };
-
-  // =====================================================
-  // SAFE JSON RESPONSE
-  // =====================================================
-
-  const getResponseData = async (response) => {
-    const contentType =
-      response.headers.get("content-type") || "";
-
-    if (contentType.includes("application/json")) {
-      return await response.json();
-    }
-
-    const text = await response.text();
-
-    return {
-      detail:
-        text ||
-        `Server returned ${response.status}`,
-    };
-  };
-
-  // =====================================================
+  // ============================================================
   // LOAD QUIZ
-  // =====================================================
+  // ============================================================
 
   useEffect(() => {
     const loadQuiz = async () => {
@@ -71,257 +35,113 @@ function Quiz() {
         setLoading(true);
         setError("");
 
-        const token = getToken();
-
-        if (!token) {
-          setError(
-            "Your login session is missing. Please login again."
-          );
-
-          setLoading(false);
-          return;
-        }
-
-        console.log(
-          "QUIZ LOAD TOKEN:",
-          token
-        );
-
-        console.log(
-          "QUIZ TOKEN SEGMENTS:",
-          token.split(".").length
-        );
-
         const response = await fetch(
-          `${API_URL}/api/quiz/lesson/${lessonId}`,
-          {
-            method: "GET",
-
-            headers: {
-              Authorization: `Bearer ${token}`,
-              Accept: "application/json",
-            },
-          }
+          `${API_URL}/api/quiz/lesson/${lessonId}`
         );
 
-        console.log(
-          "QUIZ LOAD STATUS:",
-          response.status
-        );
-
-        const data =
-          await getResponseData(response);
-
-        console.log(
-          "QUIZ LOAD RESPONSE:",
-          data
-        );
-
-        // =========================
-        // AUTH ERROR
-        // =========================
-
-        if (response.status === 401) {
-          localStorage.removeItem(
-            "access_token"
-          );
-
-          setError(
-            "Your login session expired. Please login again."
-          );
-
-          return;
-        }
-
-        // =========================
-        // OTHER ERROR
-        // =========================
+        const data = await response.json();
 
         if (!response.ok) {
           throw new Error(
-            data.detail ||
-              "Failed to load quiz"
+            data.detail || "Failed to load quiz"
           );
         }
 
-        // =========================
-        // QUIZ DATA
-        // =========================
-
         if (!Array.isArray(data)) {
-          throw new Error(
-            "Quiz API returned invalid data."
-          );
+          throw new Error("Invalid quiz data received");
         }
 
         setQuestions(data);
-
-      } catch (error) {
-        console.error(
-          "Quiz loading error:",
-          error
-        );
-
-        setError(
-          error.message ||
-            "Unable to load quiz."
-        );
+      } catch (err) {
+        console.error("QUIZ LOAD ERROR:", err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    loadQuiz();
+    if (lessonId) {
+      loadQuiz();
+    }
   }, [lessonId]);
 
-  // =====================================================
-  // LOGIN AGAIN
-  // =====================================================
-
-  const handleLoginAgain = () => {
-    localStorage.removeItem(
-      "access_token"
-    );
-
-    navigate("/login");
-  };
-
-  // =====================================================
+  // ============================================================
   // CHECK ANSWER
-  // =====================================================
+  // ============================================================
 
   const handleAnswer = async (answer) => {
-    if (answered) {
+    if (answered || submitting) {
       return;
     }
 
-    const token = getToken();
-
-    if (!token) {
-      setError(
-        "Your login session expired. Please login again."
-      );
-
+    if (!questions[currentIndex]) {
       return;
     }
+
+    const questionId = questions[currentIndex].id;
 
     setSelectedAnswer(answer);
     setError("");
 
     try {
-      const currentQuestion =
-        questions[currentIndex];
-
-      const questionId =
-        currentQuestion.id;
-
       const response = await fetch(
         `${API_URL}/api/quiz/check/${questionId}?answer=${encodeURIComponent(
           answer
         )}`,
         {
           method: "POST",
-
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/json",
-          },
         }
       );
 
-      console.log(
-        "CHECK ANSWER STATUS:",
-        response.status
-      );
+      const data = await response.json();
 
-      const data =
-        await getResponseData(response);
-
-      console.log(
-        "CHECK ANSWER RESPONSE:",
-        data
-      );
-
-      // =========================
-      // AUTH ERROR
-      // =========================
-
-      if (response.status === 401) {
-        localStorage.removeItem(
-          "access_token"
-        );
-
-        setError(
-          "Your login session expired. Please login again."
-        );
-
-        return;
-      }
-
-      // =========================
-      // OTHER ERROR
-      // =========================
+      console.log("ANSWER RESPONSE:", data);
 
       if (!response.ok) {
         throw new Error(
-          data.detail ||
-            "Failed to check answer"
+          data.detail || "Failed to check answer"
         );
       }
 
-      // =========================
-      // RESULT
-      // =========================
-
-      setCorrect(
-        Boolean(data.correct)
-      );
-
+      setCorrect(Boolean(data.correct));
       setAnswered(true);
 
       if (data.correct) {
-        setScore(
-          (prev) => prev + 1
-        );
+        setScore((previous) => previous + 1);
       }
+    } catch (err) {
+      console.error("ANSWER ERROR:", err);
 
-    } catch (error) {
-      console.error(
-        "Answer error:",
-        error
-      );
-
-      setError(
-        error.message ||
-          "Failed to check answer."
-      );
+      setSelectedAnswer(null);
+      setError(err.message);
     }
   };
 
-  // =====================================================
+  // ============================================================
   // SUBMIT QUIZ
-  // =====================================================
+  // ============================================================
 
   const submitQuiz = async () => {
-    if (
-      submitting ||
-      finished
-    ) {
+    if (submitting || finished) {
       return;
     }
 
-    const token = getToken();
+    const token = localStorage.getItem("access_token");
 
+    console.log("QUIZ TOKEN:", token);
     console.log(
-      "QUIZ SUBMIT TOKEN:",
-      token
+      "TOKEN SEGMENTS:",
+      token ? token.split(".").length : 0
     );
 
-    if (!token) {
+    if (
+      !token ||
+      token === "undefined" ||
+      token === "null"
+    ) {
       setError(
-        "Your login session expired. Please login again."
+        "Login session expired. Please login again."
       );
-
       return;
     }
 
@@ -329,51 +149,36 @@ function Quiz() {
       setSubmitting(true);
       setError("");
 
+      const finalScore = score;
+
       const url =
         `${API_URL}/api/quiz/submit/${lessonId}` +
-        `?score=${score}` +
+        `?score=${finalScore}` +
         `&total_questions=${questions.length}`;
 
-      console.log(
-        "QUIZ SUBMIT URL:",
-        url
-      );
+      console.log("QUIZ SUBMIT URL:", url);
 
-      const response = await fetch(
-        url,
-        {
-          method: "POST",
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type":
-              "application/json",
-            Accept: "application/json",
-          },
-        }
-      );
+      const data = await response.json();
 
       console.log(
         "QUIZ SUBMIT STATUS:",
         response.status
       );
 
-      const data =
-        await getResponseData(response);
-
       console.log(
         "QUIZ SUBMIT RESPONSE:",
         data
       );
 
-      // =========================
-      // AUTH ERROR
-      // =========================
-
       if (response.status === 401) {
-        localStorage.removeItem(
-          "access_token"
-        );
+        localStorage.removeItem("access_token");
 
         setError(
           "Your login session expired. Please login again."
@@ -382,49 +187,37 @@ function Quiz() {
         return;
       }
 
-      // =========================
-      // OTHER ERROR
-      // =========================
-
       if (!response.ok) {
         throw new Error(
-          data.detail ||
-            "Failed to submit quiz"
+          data.detail || "Failed to submit quiz"
         );
       }
 
       setFinished(true);
-
-    } catch (error) {
+    } catch (err) {
       console.error(
-        "Quiz submit error:",
-        error
+        "QUIZ SUBMIT ERROR:",
+        err
       );
 
-      setError(
-        error.message ||
-          "Failed to submit quiz."
-      );
+      setError(err.message);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // =====================================================
+  // ============================================================
   // NEXT QUESTION
-  // =====================================================
+  // ============================================================
 
   const handleNext = () => {
     if (submitting) {
       return;
     }
 
-    if (
-      currentIndex <
-      questions.length - 1
-    ) {
+    if (currentIndex < questions.length - 1) {
       setCurrentIndex(
-        (prev) => prev + 1
+        (previous) => previous + 1
       );
 
       setSelectedAnswer(null);
@@ -438,9 +231,9 @@ function Quiz() {
     submitQuiz();
   };
 
-  // =====================================================
+  // ============================================================
   // RETRY
-  // =====================================================
+  // ============================================================
 
   const handleRetry = () => {
     setCurrentIndex(0);
@@ -453,38 +246,42 @@ function Quiz() {
     setError("");
   };
 
-  // =====================================================
+  // ============================================================
   // LOADING
-  // =====================================================
+  // ============================================================
 
   if (loading) {
     return (
       <div className="quiz-page">
+        <div className="quiz-loading">
+          <div className="loading-spinner"></div>
 
-        <div className="quiz-container">
+          <h2>Loading Quiz</h2>
 
           <p>
-            Loading quiz...
+            Preparing your questions...
           </p>
-
         </div>
-
       </div>
     );
   }
 
-  // =====================================================
-  // ERROR
-  // =====================================================
+  // ============================================================
+  // LOAD ERROR
+  // ============================================================
 
-  if (
-    error &&
-    !questions.length
-  ) {
+  if (error && questions.length === 0) {
     return (
       <div className="quiz-page">
+        <div className="quiz-empty-card">
 
-        <div className="quiz-container quiz-error">
+          <div className="empty-icon">
+            ⚠️
+          </div>
+
+          <span className="quiz-label">
+            QUIZ ERROR
+          </span>
 
           <h2>
             Unable to load quiz
@@ -494,59 +291,34 @@ function Quiz() {
             {error}
           </p>
 
-          <div
-            className="result-actions"
-            style={{
-              marginTop: "20px",
-            }}
+          <Link
+            className="back-button"
+            to={`/lessons/${lessonId}`}
           >
-
-            <button
-              className="retry-button"
-              onClick={() => {
-                window.location.reload();
-              }}
-            >
-              ↻ Try Again
-            </button>
-
-            <button
-              className="lesson-button"
-              onClick={handleLoginAgain}
-            >
-              Login Again
-            </button>
-
-            <Link
-              to={`/lessons/${lessonId}`}
-              className="lesson-button"
-            >
-              ← Back to Lesson
-            </Link>
-
-          </div>
+            ← Back to Lesson
+          </Link>
 
         </div>
-
       </div>
     );
   }
 
-  // =====================================================
+  // ============================================================
   // NO QUESTIONS
-  // =====================================================
+  // ============================================================
 
-  if (
-    questions.length === 0
-  ) {
+  if (questions.length === 0) {
     return (
       <div className="quiz-page">
+        <div className="quiz-empty-card">
 
-        <div className="quiz-container quiz-empty">
-
-          <div className="quiz-icon">
+          <div className="empty-icon">
             📝
           </div>
+
+          <span className="quiz-label">
+            QUIZ
+          </span>
 
           <h2>
             No Quiz Available
@@ -558,33 +330,32 @@ function Quiz() {
           </p>
 
           <Link
+            className="back-button"
             to={`/lessons/${lessonId}`}
           >
             ← Back to Lesson
           </Link>
 
         </div>
-
       </div>
     );
   }
 
-  // =====================================================
+  // ============================================================
   // RESULT
-  // =====================================================
+  // ============================================================
 
   if (finished) {
-    const percentage =
-      Math.round(
-        (score /
-          questions.length) *
-          100
-      );
+    const percentage = Math.round(
+      (score / questions.length) * 100
+    );
+
+    const earnedXP = score * 10;
 
     return (
       <div className="quiz-page">
 
-        <div className="quiz-container quiz-result">
+        <div className="quiz-result-card">
 
           <div className="result-icon">
             {percentage >= 70
@@ -598,30 +369,34 @@ function Quiz() {
 
           <h1>
             {percentage >= 70
-              ? "Great job! 🎉"
+              ? "Great job!"
               : "Keep practicing!"}
           </h1>
 
-          <p className="result-text">
-            You scored
+          <p className="result-description">
+            You completed the quiz
+            successfully.
           </p>
 
-          <div className="score">
-            {score}
+          <div className="result-score">
+            <strong>
+              {score}
+            </strong>
+
             <span>
-              {" "}
               / {questions.length}
             </span>
           </div>
 
-          <p className="percentage">
-            {percentage}% correct
-          </p>
+          <div className="result-percentage">
+            {percentage}% Correct
+          </div>
 
-          <p className="quiz-xp">
-            ⚡ You earned{" "}
-            {score * 10} XP
-          </p>
+          <div className="xp-earned">
+            <span>⚡</span>
+            You earned{" "}
+            <strong>{earnedXP} XP</strong>
+          </div>
 
           <div className="result-actions">
 
@@ -642,89 +417,131 @@ function Quiz() {
           </div>
 
         </div>
-
       </div>
     );
   }
 
-  // =====================================================
+  // ============================================================
   // CURRENT QUESTION
-  // =====================================================
+  // ============================================================
 
   const currentQuestion =
     questions[currentIndex];
 
-  // =====================================================
-  // QUIZ UI
-  // =====================================================
+  const progress =
+    ((currentIndex + 1) /
+      questions.length) *
+    100;
+
+  // ============================================================
+  // QUIZ
+  // ============================================================
 
   return (
     <div className="quiz-page">
 
-      <div className="quiz-container">
+      <div className="quiz-wrapper">
 
-        {/* BACK */}
+        {/* TOP BAR */}
 
-        <Link
-          to={`/lessons/${lessonId}`}
-          className="quiz-back"
-        >
-          ← Back to Lesson
-        </Link>
+        <div className="quiz-topbar">
+
+          <Link
+            to={`/lessons/${lessonId}`}
+            className="quiz-back"
+          >
+            ← Back to Lesson
+          </Link>
+
+          <div className="quiz-xp-badge">
+            ⚡ {score * 10} XP
+          </div>
+
+        </div>
 
         {/* HEADER */}
 
-        <div className="quiz-header">
+        <div className="quiz-heading">
 
           <div>
 
             <span className="quiz-label">
-              QUIZ
+              KNOWLEDGE CHECK
             </span>
 
             <h1>
               Test Your Knowledge
             </h1>
 
+            <p>
+              Answer the questions and
+              earn XP as you learn.
+            </p>
+
           </div>
 
-          <div className="question-count">
-            {currentIndex + 1}
-            {" / "}
-            {questions.length}
+          <div className="quiz-counter">
+
+            <strong>
+              {currentIndex + 1}
+            </strong>
+
+            <span>
+              / {questions.length}
+            </span>
+
           </div>
 
         </div>
 
         {/* PROGRESS */}
 
-        <div className="quiz-progress">
+        <div className="progress-section">
 
-          <div
-            className="quiz-progress-fill"
-            style={{
-              width: `${
-                ((currentIndex + 1) /
-                  questions.length) *
-                100
-              }%`,
-            }}
-          />
+          <div className="progress-info">
+
+            <span>
+              Question {currentIndex + 1}
+            </span>
+
+            <span>
+              {Math.round(progress)}%
+            </span>
+
+          </div>
+
+          <div className="progress-track">
+
+            <div
+              className="progress-fill"
+              style={{
+                width: `${progress}%`,
+              }}
+            />
+
+          </div>
 
         </div>
 
-        {/* QUESTION */}
+        {/* QUESTION CARD */}
 
         <div className="question-card">
 
-          <span className="question-number">
-            QUESTION{" "}
-            {currentIndex + 1}
-          </span>
+          <div className="question-top">
 
-          <h2>
+            <span className="question-number">
+              QUESTION {currentIndex + 1}
+            </span>
+
+          </div>
+
+          <h2 className="question-title">
             {currentQuestion.question}
           </h2>
+
+          <p className="select-text">
+            Select the best answer
+          </p>
 
           {/* OPTIONS */}
 
@@ -742,25 +559,32 @@ function Quiz() {
                   selectedAnswer ===
                   optionLetter;
 
+                const isCorrectSelected =
+                  answered &&
+                  isSelected &&
+                  correct;
+
+                const isWrongSelected =
+                  answered &&
+                  isSelected &&
+                  !correct;
+
                 return (
                   <button
                     key={index}
-                    className={`
-                      option
-                      ${
-                        isSelected
-                          ? "selected"
-                          : ""
-                      }
-                      ${
-                        answered &&
-                        isSelected
-                          ? correct
-                            ? "correct"
-                            : "incorrect"
-                          : ""
-                      }
-                    `}
+                    type="button"
+                    className={[
+                      "option-button",
+                      isSelected
+                        ? "option-selected"
+                        : "",
+                      isCorrectSelected
+                        ? "option-correct"
+                        : "",
+                      isWrongSelected
+                        ? "option-wrong"
+                        : "",
+                    ].join(" ")}
                     onClick={() =>
                       handleAnswer(
                         optionLetter
@@ -777,6 +601,18 @@ function Quiz() {
                       {option}
                     </span>
 
+                    {isCorrectSelected && (
+                      <span className="option-status">
+                        ✓
+                      </span>
+                    )}
+
+                    {isWrongSelected && (
+                      <span className="option-status">
+                        ✕
+                      </span>
+                    )}
+
                   </button>
                 );
               }
@@ -784,31 +620,36 @@ function Quiz() {
 
           </div>
 
-          {/* ANSWER FEEDBACK */}
+          {/* FEEDBACK */}
 
           {answered && (
             <div
-              className={`
-                answer-feedback
-                ${
-                  correct
-                    ? "feedback-correct"
-                    : "feedback-incorrect"
-                }
-              `}
+              className={
+                correct
+                  ? "answer-feedback correct-feedback"
+                  : "answer-feedback wrong-feedback"
+              }
             >
 
-              <strong>
-                {correct
-                  ? "✓ Correct!"
-                  : "✕ Incorrect"}
-              </strong>
+              <div className="feedback-icon">
+                {correct ? "✓" : "✕"}
+              </div>
 
-              <span>
-                {correct
-                  ? "Nice work! You got it right."
-                  : "Don't worry. Keep learning and try the next one."}
-              </span>
+              <div>
+
+                <strong>
+                  {correct
+                    ? "Correct answer!"
+                    : "Not quite!"}
+                </strong>
+
+                <p>
+                  {correct
+                    ? "Excellent! Keep going."
+                    : "Review the lesson and keep practicing."}
+                </p>
+
+              </div>
 
             </div>
           )}
@@ -816,16 +657,8 @@ function Quiz() {
           {/* ERROR */}
 
           {error && (
-            <div className="answer-feedback feedback-incorrect">
-
-              <strong>
-                ⚠ Error
-              </strong>
-
-              <span>
-                {error}
-              </span>
-
+            <div className="quiz-error-message">
+              ⚠️ {error}
             </div>
           )}
 
