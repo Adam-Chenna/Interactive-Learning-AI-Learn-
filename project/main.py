@@ -25,6 +25,10 @@ from routers.quiz import router as quiz_router
 
 from models.quiz_progress import QuizProgress
 
+from models.certificate import Certificate
+
+from routers.certificates import router as certificates_router
+
 app = FastAPI(
     title="LearnAI API",
     description="Backend API for the LearnAI learning platform",
@@ -59,6 +63,7 @@ app.include_router(lesson_router)
 app.include_router(progress_router)
 app.include_router(ai_tutor_router)
 app.include_router(quiz_router)
+app.include_router(certificates_router)
 
 
 @app.get("/")
