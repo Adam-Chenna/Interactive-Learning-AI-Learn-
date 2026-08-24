@@ -9,6 +9,98 @@ from models.progress import LessonProgress
 from models.quiz import QuizQuestion
 from models.quiz_progress import QuizProgress
 
+# ============================================================
+# QUIZ GENERATOR
+# ============================================================
+
+def create_quiz_for_lesson(db, lesson):
+
+    title = lesson.title.strip()
+    content = lesson.content.strip()
+
+    # --------------------------------------------------------
+    # QUESTION 1
+    # --------------------------------------------------------
+
+    question_1 = QuizQuestion(
+        lesson_id=lesson.id,
+
+        question=f"What is the main topic of the lesson '{title}'?",
+
+        option_a=title,
+        option_b="Database Management",
+        option_c="Network Security",
+        option_d="Operating System Design",
+
+        correct_answer=title
+    )
+
+    db.add(question_1)
+
+    # --------------------------------------------------------
+    # QUESTION 2
+    # --------------------------------------------------------
+
+    first_sentence = content.split(".")[0].strip()
+
+    if not first_sentence:
+        first_sentence = f"This lesson explains {title}."
+
+    question_2 = QuizQuestion(
+        lesson_id=lesson.id,
+
+        question=f"Which statement best describes '{title}'?",
+
+        option_a=first_sentence,
+        option_b="It is mainly used for designing computer hardware.",
+        option_c="It is primarily a database administration technique.",
+        option_d="It is a method used only for network configuration.",
+
+        correct_answer=first_sentence
+    )
+
+    db.add(question_2)
+
+    # --------------------------------------------------------
+    # QUESTION 3
+    # --------------------------------------------------------
+
+    question_3 = QuizQuestion(
+        lesson_id=lesson.id,
+
+        question=f"Which option is most closely related to '{title}'?",
+
+        option_a=title,
+        option_b="Unrelated computer hardware maintenance",
+        option_c="Physical cable installation",
+        option_d="Printer cartridge replacement",
+
+        correct_answer=title
+    )
+
+    db.add(question_3)
+
+    # --------------------------------------------------------
+    # QUESTION 4
+    # --------------------------------------------------------
+
+    question_4 = QuizQuestion(
+        lesson_id=lesson.id,
+
+        question=f"Why is learning '{title}' useful?",
+
+        option_a=f"It helps learners understand {title}.",
+        option_b="It completely replaces the need for computers.",
+        option_c="It is used only to repair physical hardware.",
+        option_d="It prevents software from being installed.",
+
+        correct_answer=f"It helps learners understand {title}."
+    )
+
+    db.add(question_4)
+
+    db.flush()
+
 
 # ============================================================
 # ADD COURSE CONTENT
@@ -21,7 +113,7 @@ def add_course_content(db, course_title, levels_data):
     ).first()
 
     if not course:
-        print(f"Course not found: {course_title}")
+        print(f"❌ Course not found: {course_title}")
         return
 
     for level_data in levels_data:
@@ -55,8 +147,18 @@ def add_course_content(db, course_title, levels_data):
                 )
 
                 db.add(lesson)
+                db.flush()
 
-    print(f"✓ Expanded content added: {course_title}")
+                # ==========================================
+                # CREATE QUIZ FOR THIS LESSON
+                # ==========================================
+
+                create_quiz_for_lesson(
+                    db,
+                    lesson
+                )
+
+    print(f"✓ Course + quizzes added: {course_title}")
 
 
 # ============================================================
@@ -67,37 +169,60 @@ def clear_course_content(db):
 
     print("\nClearing old course content...")
 
-    # Remove quiz progress first
+    # --------------------------------------------------------
+    # Quiz progress
+    # --------------------------------------------------------
+
     try:
-        db.query(QuizProgress).delete()
-    except Exception:
-        pass
+        deleted = db.query(QuizProgress).delete()
+        print(f"✓ Quiz progress removed: {deleted}")
+    except Exception as error:
+        print("QuizProgress cleanup skipped:", error)
 
-    # Remove quiz questions
+    # --------------------------------------------------------
+    # Quiz questions
+    # --------------------------------------------------------
+
     try:
-        db.query(QuizQuestion).delete()
-    except Exception:
-        pass
+        deleted = db.query(QuizQuestion).delete()
+        print(f"✓ Quiz questions removed: {deleted}")
+    except Exception as error:
+        print("QuizQuestion cleanup skipped:", error)
 
-    # Remove lesson progress
+    # --------------------------------------------------------
+    # Lesson progress
+    # --------------------------------------------------------
+
     try:
-        db.query(LessonProgress).delete()
-    except Exception:
-        pass
+        deleted = db.query(LessonProgress).delete()
+        print(f"✓ Lesson progress removed: {deleted}")
+    except Exception as error:
+        print("LessonProgress cleanup skipped:", error)
 
-    # Delete lessons
-    db.query(Lesson).delete()
+    # --------------------------------------------------------
+    # Lessons
+    # --------------------------------------------------------
 
-    # Delete chapters
-    db.query(Chapter).delete()
+    deleted = db.query(Lesson).delete()
+    print(f"✓ Lessons removed: {deleted}")
 
-    # Delete levels
-    db.query(Level).delete()
+    # --------------------------------------------------------
+    # Chapters
+    # --------------------------------------------------------
+
+    deleted = db.query(Chapter).delete()
+    print(f"✓ Chapters removed: {deleted}")
+
+    # --------------------------------------------------------
+    # Levels
+    # --------------------------------------------------------
+
+    deleted = db.query(Level).delete()
+    print(f"✓ Levels removed: {deleted}")
 
     db.commit()
 
-    print("✓ Old levels, chapters and lessons removed.\n")
-
+    print("✓ Old course content completely removed.\n")
 
 # ============================================================
 # WEB DEVELOPMENT
@@ -2063,20 +2188,29 @@ data structures into a complete application.
 # SEED EVERYTHING
 # ============================================================
 
+# ============================================================
+# SEED EVERYTHING
+# ============================================================
+
 def seed_content():
 
     db = SessionLocal()
 
     try:
 
+        print("\n")
+        print("=" * 60)
+        print("STARTING LEARNAI DATABASE SEED")
+        print("=" * 60)
+
         # ----------------------------------------------------
-        # Remove old content
+        # CLEAR OLD CONTENT
         # ----------------------------------------------------
 
         clear_course_content(db)
 
         # ----------------------------------------------------
-        # Add expanded courses
+        # ADD COURSES
         # ----------------------------------------------------
 
         add_course_content(
@@ -2103,35 +2237,54 @@ def seed_content():
             data_science
         )
 
+        # ----------------------------------------------------
+        # COMMIT EVERYTHING
+        # ----------------------------------------------------
+
         db.commit()
 
-        print("\n")
-        print("=" * 50)
-        print("ALL EXPANDED COURSE CONTENT ADDED SUCCESSFULLY!")
-        print("=" * 50)
-
         # ----------------------------------------------------
-        # Show statistics
+        # STATISTICS
         # ----------------------------------------------------
 
         courses_count = db.query(Course).count()
         levels_count = db.query(Level).count()
         chapters_count = db.query(Chapter).count()
         lessons_count = db.query(Lesson).count()
+        quiz_count = db.query(QuizQuestion).count()
 
-        print(f"\nCourses  : {courses_count}")
-        print(f"Levels   : {levels_count}")
-        print(f"Chapters : {chapters_count}")
-        print(f"Lessons  : {lessons_count}")
+        print("\n")
+        print("=" * 60)
+        print("LEARN AI DATABASE SEEDED SUCCESSFULLY")
+        print("=" * 60)
+
+        print(f"\nCourses         : {courses_count}")
+        print(f"Levels          : {levels_count}")
+        print(f"Chapters        : {chapters_count}")
+        print(f"Lessons         : {lessons_count}")
+        print(f"Quiz Questions  : {quiz_count}")
+
+        print("\n✓ Courses added")
+        print("✓ Lessons added")
+        print("✓ Quiz questions added")
+        print("✓ Progress tables cleaned")
+        print("✓ Quiz progress cleaned")
 
         print("\nYour LearnAI content is ready!")
+        print("=" * 60)
 
     except Exception as error:
 
         db.rollback()
 
-        print("\nERROR:")
+        print("\n")
+        print("=" * 60)
+        print("❌ SEED ERROR")
+        print("=" * 60)
+
         print(error)
+
+        raise
 
     finally:
 
