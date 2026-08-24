@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { jsPDF } from "jspdf";
+import "./Certificates.css";
 
-const API_URL = "import.meta.env.VITE_API_URL";
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Certificates() {
   const [courses, setCourses] = useState([]);
@@ -52,9 +53,9 @@ function Certificates() {
         }
 
         setProgress(progressData);
-      } catch (error) {
-        console.error("Certificate error:", error);
-        setError(error.message);
+      } catch (err) {
+        console.error("Certificate error:", err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -72,21 +73,18 @@ function Certificates() {
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
 
-      // Border
       pdf.setLineWidth(2);
       pdf.rect(10, 10, pageWidth - 20, pageHeight - 20);
 
       pdf.setLineWidth(0.5);
       pdf.rect(15, 15, pageWidth - 30, pageHeight - 30);
 
-      // Logo / Brand
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(28);
       pdf.text("LearnAI", pageWidth / 2, 35, {
         align: "center",
       });
 
-      // Certificate title
       pdf.setFontSize(30);
       pdf.text(
         "CERTIFICATE OF COMPLETION",
@@ -97,7 +95,6 @@ function Certificates() {
         }
       );
 
-      // Subtitle
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(15);
 
@@ -110,20 +107,13 @@ function Certificates() {
         }
       );
 
-      // Student name
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(26);
 
-      pdf.text(
-        "Adam",
-        pageWidth / 2,
-        98,
-        {
-          align: "center",
-        }
-      );
+      pdf.text("Adam", pageWidth / 2, 98, {
+        align: "center",
+      });
 
-      // Completion text
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(14);
 
@@ -136,21 +126,14 @@ function Certificates() {
         }
       );
 
-      // Course name
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(22);
 
-      pdf.text(
-        course.title,
-        pageWidth / 2,
-        133,
-        {
-          align: "center",
-          maxWidth: pageWidth - 60,
-        }
-      );
+      pdf.text(course.title, pageWidth / 2, 133, {
+        align: "center",
+        maxWidth: pageWidth - 60,
+      });
 
-      // Date
       const date = new Date().toLocaleDateString(
         "en-IN",
         {
@@ -172,37 +155,26 @@ function Certificates() {
         }
       );
 
-      // Signature
       pdf.line(45, 175, 105, 175);
       pdf.line(190, 175, 250, 175);
 
       pdf.setFontSize(11);
 
-      pdf.text(
-        "LearnAI",
-        75,
-        182,
-        {
-          align: "center",
-        }
-      );
+      pdf.text("LearnAI", 75, 182, {
+        align: "center",
+      });
 
-      pdf.text(
-        "Course Completion",
-        220,
-        182,
-        {
-          align: "center",
-        }
-      );
+      pdf.text("Course Completion", 220, 182, {
+        align: "center",
+      });
 
       pdf.save(
         `${course.title.replace(/\s+/g, "-")}-Certificate.pdf`
       );
-    } catch (error) {
+    } catch (err) {
       console.error(
         "Certificate generation error:",
-        error
+        err
       );
 
       setError("Failed to generate certificate.");
@@ -215,20 +187,26 @@ function Certificates() {
     return (
       <div className="app">
         <main className="main">
-          <div className="topbar">
+          <header className="topbar">
             <div>
               <h1>Certificates</h1>
-              <p>Loading your certificates...</p>
+              <p>Loading your achievements...</p>
             </div>
-          </div>
+          </header>
 
-          <section className="progress-content">
-            <p>Loading...</p>
+          <section className="certificate-loading">
+            <div className="loading-spinner"></div>
+            <p>Preparing your certificates...</p>
           </section>
         </main>
       </div>
     );
   }
+
+  const completedCourses = courses.filter(
+    (course) =>
+      (progress[course.id]?.percentage || 0) >= 100
+  );
 
   return (
     <div className="app">
@@ -236,26 +214,21 @@ function Certificates() {
 
       <aside className="sidebar">
         <div className="logo">
-          <div className="logo-icon">
-            L
-          </div>
+          <img
+            src="/logo.png"
+            alt="LearnAI Logo"
+          />
 
           <span>LearnAI</span>
         </div>
 
         <nav className="nav">
-          <Link
-            to="/"
-            className="nav-item"
-          >
+          <Link to="/" className="nav-item">
             <span>⌂</span>
             Dashboard
           </Link>
 
-          <Link
-            to="/"
-            className="nav-item"
-          >
+          <Link to="/" className="nav-item">
             <span>📚</span>
             My Courses
           </Link>
@@ -302,16 +275,14 @@ function Certificates() {
         <header className="topbar">
           <div>
             <h1>Certificates</h1>
-
             <p>
-              Celebrate your learning achievements.
+              Your achievements and course
+              completion certificates.
             </p>
           </div>
 
           <div className="profile">
-            <div className="avatar">
-              A
-            </div>
+            <div className="avatar">A</div>
 
             <div>
               <strong>Adam</strong>
@@ -320,26 +291,124 @@ function Certificates() {
           </div>
         </header>
 
-        <section className="progress-content">
-          <div className="progress-label">
-            YOUR ACHIEVEMENTS
+        {/* HERO */}
+
+        <section className="certificate-hero">
+          <div className="certificate-hero-content">
+            <span className="certificate-eyebrow">
+              YOUR ACHIEVEMENTS
+            </span>
+
+            <h2>
+              Keep learning.
+              <br />
+              <span>Earn your next certificate.</span>
+            </h2>
+
+            <p>
+              Complete your courses and showcase
+              your learning achievements with
+              official LearnAI certificates.
+            </p>
           </div>
 
-          <h2 className="progress-title">
-            Course Certificates
-          </h2>
+          <div className="certificate-trophy">
+            🏆
+          </div>
+        </section>
 
-          <p className="progress-subtitle">
-            Complete a course to unlock your certificate.
-          </p>
+        {/* STATS */}
 
-          {error && (
-            <div className="quiz-error">
-              <p>{error}</p>
+        <section className="certificate-stats">
+          <div className="certificate-stat">
+            <div className="certificate-stat-icon">
+              🏆
             </div>
-          )}
 
-          <div className="course-grid">
+            <div>
+              <strong>
+                {completedCourses.length}
+              </strong>
+
+              <span>
+                Certificates Earned
+              </span>
+            </div>
+          </div>
+
+          <div className="certificate-stat">
+            <div className="certificate-stat-icon">
+              📚
+            </div>
+
+            <div>
+              <strong>
+                {courses.length}
+              </strong>
+
+              <span>
+                Available Courses
+              </span>
+            </div>
+          </div>
+
+          <div className="certificate-stat">
+            <div className="certificate-stat-icon">
+              🎯
+            </div>
+
+            <div>
+              <strong>
+                {courses.length
+                  ? Math.round(
+                      (completedCourses.length /
+                        courses.length) *
+                        100
+                    )
+                  : 0}
+                %
+              </strong>
+
+              <span>
+                Completion Rate
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* ERROR */}
+
+        {error && (
+          <div className="certificate-error">
+            <span>⚠️</span>
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* COURSE CERTIFICATES */}
+
+        <section className="certificates-section">
+          <div className="certificates-heading">
+            <div>
+              <span className="section-eyebrow">
+                LEARNING ACHIEVEMENTS
+              </span>
+
+              <h2>Course Certificates</h2>
+
+              <p>
+                Complete a course to unlock
+                its certificate.
+              </p>
+            </div>
+
+            <div className="certificate-count">
+              {completedCourses.length} /{" "}
+              {courses.length} unlocked
+            </div>
+          </div>
+
+          <div className="certificate-grid">
             {courses.map((course) => {
               const courseProgress =
                 progress[course.id];
@@ -351,95 +420,135 @@ function Certificates() {
                 percentage >= 100;
 
               return (
-                <div
-                  className="course-card"
+                <article
+                  className={`certificate-card ${
+                    completed
+                      ? "certificate-card-completed"
+                      : "certificate-card-locked"
+                  }`}
                   key={course.id}
                 >
-                  <div className="course-icon">
-                    {completed ? "🏆" : "🔒"}
+                  {/* CARD HEADER */}
+
+                  <div className="certificate-card-top">
+                    <div
+                      className={`certificate-course-icon ${
+                        completed
+                          ? "unlocked"
+                          : "locked"
+                      }`}
+                    >
+                      {completed
+                        ? "🏆"
+                        : "🔒"}
+                    </div>
+
+                    <span
+                      className={`certificate-status ${
+                        completed
+                          ? "status-unlocked"
+                          : "status-locked"
+                      }`}
+                    >
+                      {completed
+                        ? "UNLOCKED"
+                        : "LOCKED"}
+                    </span>
                   </div>
 
-                  <div className="course-info">
-                    <span className="category">
+                  {/* COURSE INFO */}
+
+                  <div className="certificate-card-body">
+                    <span className="certificate-category">
                       {course.category}
                     </span>
 
-                    <h3>
-                      {course.title}
-                    </h3>
+                    <h3>{course.title}</h3>
 
                     <p>
                       {completed
-                        ? "Congratulations! You completed this course."
+                        ? "Congratulations! You have successfully completed this course."
                         : `Complete ${course.title} to unlock your certificate.`}
                     </p>
 
-                    <div className="progress-info">
+                    {/* PROGRESS */}
+
+                    <div className="certificate-progress-header">
                       <span>
-                        {percentage}% Complete
+                        Course Progress
                       </span>
+
+                      <strong>
+                        {percentage}%
+                      </strong>
                     </div>
 
-                    <div className="progress">
+                    <div className="certificate-progress">
                       <div
-                        className="progress-fill"
+                        className="certificate-progress-fill"
                         style={{
                           width: `${percentage}%`,
                         }}
                       />
                     </div>
 
+                    {/* BUTTON */}
+
                     <button
-                      className="next-button"
+                      className={`certificate-button ${
+                        completed
+                          ? "certificate-button-active"
+                          : "certificate-button-disabled"
+                      }`}
                       disabled={
                         !completed ||
                         generating
                       }
                       onClick={() =>
-                        generateCertificate(course)
+                        generateCertificate(
+                          course
+                        )
                       }
-                      style={{
-                        marginTop: "16px",
-                        opacity:
-                          completed ? 1 : 0.5,
-                        cursor:
-                          completed
-                            ? "pointer"
-                            : "not-allowed",
-                      }}
                     >
-                      {generating
-                        ? "Generating..."
-                        : completed
-                        ? "🏆 Download Certificate"
-                        : "🔒 Certificate Locked"}
+                      {generating ? (
+                        <>
+                          <span className="button-spinner"></span>
+                          Generating...
+                        </>
+                      ) : completed ? (
+                        <>
+                          <span>↓</span>
+                          Download Certificate
+                        </>
+                      ) : (
+                        <>
+                          <span>🔒</span>
+                          Certificate Locked
+                        </>
+                      )}
                     </button>
                   </div>
-                </div>
+                </article>
               );
             })}
           </div>
 
           {courses.length === 0 && (
-            <div className="achievement-card">
-              <div className="achievement-icon">
-                📚
-              </div>
+            <div className="empty-certificates">
+              <div>📚</div>
 
-              <div>
-                <span className="progress-small-label">
-                  NO COURSES
-                </span>
+              <h2>
+                No courses available yet
+              </h2>
 
-                <h2>
-                  No courses available yet.
-                </h2>
+              <p>
+                Start learning to earn your
+                first certificate.
+              </p>
 
-                <p>
-                  Complete a course to earn your
-                  first certificate.
-                </p>
-              </div>
+              <Link to="/" className="empty-button">
+                Explore Courses →
+              </Link>
             </div>
           )}
         </section>
@@ -449,3 +558,4 @@ function Certificates() {
 }
 
 export default Certificates;
+
