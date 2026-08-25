@@ -64,124 +64,332 @@ function Certificates() {
     loadData();
   }, []);
 
-  const generateCertificate = (course) => {
-    try {
-      setGenerating(true);
+  
+const generateCertificate = (course) => {
+  try {
+    setGenerating(true);
+    setError("");
 
-      const pdf = new jsPDF("landscape", "mm", "a4");
+    const pdf = new jsPDF("landscape", "mm", "a4");
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
 
-      pdf.setLineWidth(2);
-      pdf.rect(10, 10, pageWidth - 20, pageHeight - 20);
+    // ==========================================
+    // STUDENT DATA
+    // ==========================================
 
-      pdf.setLineWidth(0.5);
-      pdf.rect(15, 15, pageWidth - 30, pageHeight - 30);
+    const studentName =
+      localStorage.getItem("user_name") || "Adam";
 
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(28);
-      pdf.text("LearnAI", pageWidth / 2, 35, {
-        align: "center",
+    const certificateId =
+      `LAI-${course.id}-${Date.now()
+        .toString()
+        .slice(-6)}`;
+
+    const completionDate =
+      new Date().toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
       });
 
-      pdf.setFontSize(30);
-      pdf.text(
-        "CERTIFICATE OF COMPLETION",
-        pageWidth / 2,
-        60,
-        {
-          align: "center",
-        }
-      );
+    // ==========================================
+    // BACKGROUND
+    // ==========================================
 
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(15);
+    pdf.setFillColor(248, 250, 252);
+    pdf.rect(
+      0,
+      0,
+      pageWidth,
+      pageHeight,
+      "F"
+    );
 
-      pdf.text(
-        "This certificate is proudly presented to",
-        pageWidth / 2,
-        78,
-        {
-          align: "center",
-        }
-      );
+    // ==========================================
+    // OUTER GOLD BORDER
+    // ==========================================
 
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(26);
+    pdf.setDrawColor(180, 140, 40);
+    pdf.setLineWidth(2);
 
-      pdf.text("Adam", pageWidth / 2, 98, {
+    pdf.rect(
+      8,
+      8,
+      pageWidth - 16,
+      pageHeight - 16
+    );
+
+    // ==========================================
+    // INNER BORDER
+    // ==========================================
+
+    pdf.setDrawColor(210, 180, 90);
+    pdf.setLineWidth(0.6);
+
+    pdf.rect(
+      13,
+      13,
+      pageWidth - 26,
+      pageHeight - 26
+    );
+
+    // ==========================================
+    // TOP BRAND
+    // ==========================================
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(28);
+    pdf.setTextColor(30, 41, 59);
+
+    pdf.text(
+      "LearnAI",
+      pageWidth / 2,
+      34,
+      {
         align: "center",
-      });
+      }
+    );
 
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(14);
+    // Small divider
 
-      pdf.text(
-        "for successfully completing the course",
-        pageWidth / 2,
-        115,
-        {
-          align: "center",
-        }
-      );
+    pdf.setDrawColor(180, 140, 40);
+    pdf.setLineWidth(0.8);
 
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(22);
+    pdf.line(
+      pageWidth / 2 - 25,
+      40,
+      pageWidth / 2 + 25,
+      40
+    );
 
-      pdf.text(course.title, pageWidth / 2, 133, {
+    // ==========================================
+    // CERTIFICATE TITLE
+    // ==========================================
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(25);
+    pdf.setTextColor(15, 23, 42);
+
+    pdf.text(
+      "CERTIFICATE OF COMPLETION",
+      pageWidth / 2,
+      56,
+      {
         align: "center",
-        maxWidth: pageWidth - 60,
-      });
+      }
+    );
 
-      const date = new Date().toLocaleDateString(
-        "en-IN",
-        {
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        }
-      );
+    // ==========================================
+    // SUBTITLE
+    // ==========================================
 
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(12);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(13);
+    pdf.setTextColor(100, 116, 139);
 
-      pdf.text(
-        `Completed on ${date}`,
-        pageWidth / 2,
-        155,
-        {
-          align: "center",
-        }
-      );
-
-      pdf.line(45, 175, 105, 175);
-      pdf.line(190, 175, 250, 175);
-
-      pdf.setFontSize(11);
-
-      pdf.text("LearnAI", 75, 182, {
+    pdf.text(
+      "This certificate is proudly presented to",
+      pageWidth / 2,
+      70,
+      {
         align: "center",
-      });
+      }
+    );
 
-      pdf.text("Course Completion", 220, 182, {
+    // ==========================================
+    // STUDENT NAME
+    // ==========================================
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(30);
+    pdf.setTextColor(30, 41, 59);
+
+    pdf.text(
+      studentName.toUpperCase(),
+      pageWidth / 2,
+      91,
+      {
         align: "center",
-      });
+      }
+    );
 
-      pdf.save(
-        `${course.title.replace(/\s+/g, "-")}-Certificate.pdf`
-      );
-    } catch (err) {
-      console.error(
-        "Certificate generation error:",
-        err
-      );
+    // ==========================================
+    // NAME UNDERLINE
+    // ==========================================
 
-      setError("Failed to generate certificate.");
-    } finally {
-      setGenerating(false);
-    }
-  };
+    pdf.setDrawColor(180, 140, 40);
+    pdf.setLineWidth(0.7);
+
+    pdf.line(
+      pageWidth / 2 - 45,
+      97,
+      pageWidth / 2 + 45,
+      97
+    );
+
+    // ==========================================
+    // COMPLETION MESSAGE
+    // ==========================================
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(13);
+    pdf.setTextColor(71, 85, 105);
+
+    pdf.text(
+      "for successfully completing the course",
+      pageWidth / 2,
+      111,
+      {
+        align: "center",
+      }
+    );
+
+    // ==========================================
+    // COURSE NAME
+    // ==========================================
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(23);
+    pdf.setTextColor(37, 99, 235);
+
+    pdf.text(
+      course.title,
+      pageWidth / 2,
+      128,
+      {
+        align: "center",
+        maxWidth: pageWidth - 70,
+      }
+    );
+
+    // ==========================================
+    // COMPLETION DATE
+    // ==========================================
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+    pdf.setTextColor(100, 116, 139);
+
+    pdf.text(
+      `Completed on ${completionDate}`,
+      pageWidth / 2,
+      143,
+      {
+        align: "center",
+      }
+    );
+
+    // ==========================================
+    // CERTIFICATE ID
+    // ==========================================
+
+    pdf.setFontSize(9);
+    pdf.setTextColor(148, 163, 184);
+
+    pdf.text(
+      `Certificate ID: ${certificateId}`,
+      pageWidth / 2,
+      151,
+      {
+        align: "center",
+      }
+    );
+
+    // ==========================================
+    // SIGNATURE AREA
+    // ==========================================
+
+    pdf.setDrawColor(100, 116, 139);
+    pdf.setLineWidth(0.5);
+
+    // Left signature
+
+    pdf.line(
+      45,
+      174,
+      105,
+      174
+    );
+
+    // Right signature
+
+    pdf.line(
+      190,
+      174,
+      250,
+      174
+    );
+
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(51, 65, 85);
+
+    pdf.text(
+      "LearnAI",
+      75,
+      181,
+      {
+        align: "center",
+      }
+    );
+
+    pdf.text(
+      "Course Director",
+      220,
+      181,
+      {
+        align: "center",
+      }
+    );
+
+    // ==========================================
+    // FOOTER
+    // ==========================================
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8);
+    pdf.setTextColor(148, 163, 184);
+
+    pdf.text(
+      "LearnAI • AI Powered Learning Platform",
+      pageWidth / 2,
+      193,
+      {
+        align: "center",
+      }
+    );
+
+    // ==========================================
+    // SAVE
+    // ==========================================
+
+    const safeCourseName =
+      course.title
+        .replace(/[^a-zA-Z0-9]/g, "-")
+        .replace(/-+/g, "-");
+
+    pdf.save(
+      `${safeCourseName}-Certificate.pdf`
+    );
+
+  } catch (error) {
+    console.error(
+      "Certificate generation error:",
+      error
+    );
+
+    setError(
+      "Failed to generate certificate."
+    );
+
+  } finally {
+    setGenerating(false);
+  }
+};
+
+
 
   if (loading) {
     return (
