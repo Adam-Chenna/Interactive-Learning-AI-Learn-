@@ -35,7 +35,7 @@ function AITutor() {
       const token = localStorage.getItem("access_token");
 
       const response = await fetch(
-        "`${import.meta.env.VITE_API_URL}/api/courses/`",
+        `${import.meta.env.VITE_API_URL}/api/ai-tutor/ask`,
         {
           method: "POST",
           headers: {
