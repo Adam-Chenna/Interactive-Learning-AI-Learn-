@@ -490,10 +490,16 @@ const generateCertificate = (course) => {
           </div>
 
           <div className="profile">
-            <div className="avatar">A</div>
+            <div className="avatar">
+  {(localStorage.getItem("user_name") || "Student")
+    .charAt(0)
+    .toUpperCase()}
+</div>
 
             <div>
-              <strong>Adam</strong>
+              <strong>
+  {localStorage.getItem("user_name") || "Student"}
+</strong>
               <span>Student</span>
             </div>
           </div>

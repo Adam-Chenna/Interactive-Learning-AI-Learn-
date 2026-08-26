@@ -35,6 +35,10 @@ function Dashboard() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [userName, setUserName] = useState(
+  localStorage.getItem("user_name") || "Student"
+  );
+
   const [progress, setProgress] = useState({
     completed_lessons: 0,
     total_xp: 0,
@@ -167,6 +171,12 @@ function Dashboard() {
     };
   };
 
+  const completedCoursesCount = courses.filter((course) => {
+  const courseProgress = getCourseProgress(course);
+
+  return courseProgress.percentage >= 100;
+}).length;
+
   // =========================
   // LOGOUT
   // =========================
@@ -286,12 +296,12 @@ function Dashboard() {
           <div className="profile">
 
             <div className="avatar">
-              A
-            </div>
+  {userName.charAt(0).toUpperCase()}
+</div>
 
             <div>
               <strong>
-                Adam
+                {userName}
               </strong>
 
               <span>
@@ -316,8 +326,8 @@ function Dashboard() {
             </span>
 
             <h2>
-              Welcome back, Adam 👋
-            </h2>
+  Welcome back, {userName} 👋
+</h2>
 
             <p>
               Pick up where you left off and keep
@@ -551,7 +561,7 @@ function Dashboard() {
             <div>
 
               <strong>
-                0
+                {completedCoursesCount}
               </strong>
 
               <p>

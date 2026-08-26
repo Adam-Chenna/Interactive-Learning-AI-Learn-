@@ -188,22 +188,21 @@ function Progress() {
 
 
           <Link
-            to="/"
-            className="nav-item"
-          >
-            <span>📚</span>
-            My Courses
-          </Link>
+  to="/"
+  className="nav-item"
+>
+  <span>📚</span>
+  My Courses
+</Link>
 
 
-          <a
-            href="#"
-            className="nav-item"
-            onClick={(e) => e.preventDefault()}
-          >
-            <span>🤖</span>
-            AI Tutor
-          </a>
+          <Link
+  to="/ai-tutor"
+  className="nav-item"
+>
+  <span>🤖</span>
+  AI Tutor
+</Link>
 
 
           <Link
@@ -215,14 +214,13 @@ function Progress() {
           </Link>
 
 
-          <a
-            href="#"
-            className="nav-item"
-            onClick={(e) => e.preventDefault()}
-          >
-            <span>🏆</span>
-            Certificates
-          </a>
+          <Link
+  to="/certificates"
+  className="nav-item"
+>
+  <span>🏆</span>
+  Certificates
+</Link>
 
         </nav>
 
@@ -278,14 +276,16 @@ function Progress() {
           <div className="profile">
 
             <div className="avatar">
-              A
-            </div>
+  {(localStorage.getItem("user_name") || "Student")
+    .charAt(0)
+    .toUpperCase()}
+</div>
 
             <div>
 
               <strong>
-                Adam
-              </strong>
+  {localStorage.getItem("user_name") || "Student"}
+</strong>
 
               <span>
                 Student
