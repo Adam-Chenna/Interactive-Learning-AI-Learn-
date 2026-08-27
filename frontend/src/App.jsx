@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+
 import {
   BrowserRouter,
   Routes,
   Route,
   Link,
   useNavigate,
+  Navigate,
 } from "react-router-dom";
 
 import CourseDetails from "./pages/CourseDetails";
@@ -16,18 +18,49 @@ import Progress from "./pages/Progress";
 import AITutor from "./pages/AITutor";
 import Quiz from "./pages/Quiz";
 import Certificates from "./pages/Certificates";
+import Settings from "./pages/Settings";
+import MyCourses from "./pages/MyCourses";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-function ProtectedRoute({ children }) {
+
+// =====================================================
+// AUTH HELPERS
+// =====================================================
+
+const getToken = () => {
   const token = localStorage.getItem("access_token");
 
-  if (!token || token === "undefined" || token === "null") {
-    return <Login />;
+  if (
+    !token ||
+    token === "undefined" ||
+    token === "null"
+  ) {
+    return null;
+  }
+
+  return token;
+};
+
+
+// =====================================================
+// PROTECTED ROUTE
+// =====================================================
+
+function ProtectedRoute({ children }) {
+  const token = getToken();
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
   }
 
   return children;
 }
+
+
+// =====================================================
+// DASHBOARD
+// =====================================================
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -36,7 +69,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   const [userName, setUserName] = useState(
-  localStorage.getItem("user_name") || "Student"
+    localStorage.getItem("user_name") || "Student"
   );
 
   const [progress, setProgress] = useState({
@@ -47,9 +80,26 @@ function Dashboard() {
 
   const [progressLoading, setProgressLoading] = useState(true);
 
-  // =========================
+
+  // ===================================================
+  // LOAD USER NAME
+  // ===================================================
+
+  useEffect(() => {
+    const savedName =
+      localStorage.getItem("user_name");
+
+    if (savedName) {
+      setUserName(savedName);
+    } else {
+      setUserName("Student");
+    }
+  }, []);
+
+
+  // ===================================================
   // LOAD COURSES
-  // =========================
+  // ===================================================
 
   useEffect(() => {
     const loadCourses = async () => {
@@ -59,14 +109,20 @@ function Dashboard() {
         );
 
         if (!response.ok) {
-          throw new Error("Failed to load courses");
+          throw new Error(
+            "Failed to load courses"
+          );
         }
 
         const data = await response.json();
 
         setCourses(data);
+
       } catch (error) {
-        console.error("Failed to load courses:", error);
+        console.error(
+          "Failed to load courses:",
+          error
+        );
       } finally {
         setLoading(false);
       }
@@ -75,15 +131,16 @@ function Dashboard() {
     loadCourses();
   }, []);
 
-  // =========================
+
+  // ===================================================
   // LOAD USER PROGRESS
-  // =========================
+  // ===================================================
 
   useEffect(() => {
     const loadProgress = async () => {
-      const token = localStorage.getItem("access_token");
+      const token = getToken();
 
-      if (!token || token === "undefined" || token === "null") {
+      if (!token) {
         setProgressLoading(false);
         return;
       }
@@ -99,31 +156,60 @@ function Dashboard() {
           }
         );
 
-        if (!response.ok) {
-          throw new Error("Failed to load progress");
+        // Invalid / expired token
+        if (response.status === 401) {
+          localStorage.removeItem(
+            "access_token"
+          );
+
+          localStorage.removeItem(
+            "user_name"
+          );
+
+          navigate("/login", {
+            replace: true,
+          });
+
+          return;
         }
 
-        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(
+            "Failed to load progress"
+          );
+        }
+
+        const data =
+          await response.json();
 
         setProgress({
-          completed_lessons: data.completed_lessons || 0,
-          total_xp: data.total_xp || 0,
+          completed_lessons:
+            data.completed_lessons || 0,
+
+          total_xp:
+            data.total_xp || 0,
+
           completed_lesson_ids:
             data.completed_lesson_ids || [],
         });
+
       } catch (error) {
-        console.error("Progress error:", error);
+        console.error(
+          "Progress error:",
+          error
+        );
       } finally {
         setProgressLoading(false);
       }
     };
 
     loadProgress();
-  }, []);
+  }, [navigate]);
 
-  // =========================
-  // CALCULATE COURSE PROGRESS
-  // =========================
+
+  // ===================================================
+  // COURSE PROGRESS
+  // ===================================================
 
   const getCourseProgress = (course) => {
     let totalLessons = 0;
@@ -138,12 +224,19 @@ function Dashboard() {
     }
 
     course.levels.forEach((level) => {
-      if (!level.chapters) return;
+
+      if (!level.chapters) {
+        return;
+      }
 
       level.chapters.forEach((chapter) => {
-        if (!chapter.lessons) return;
+
+        if (!chapter.lessons) {
+          return;
+        }
 
         chapter.lessons.forEach((lesson) => {
+
           totalLessons++;
 
           if (
@@ -153,14 +246,19 @@ function Dashboard() {
           ) {
             completedLessons++;
           }
+
         });
+
       });
+
     });
 
     const percentage =
       totalLessons > 0
         ? Math.round(
-            (completedLessons / totalLessons) * 100
+            (completedLessons /
+              totalLessons) *
+              100
           )
         : 0;
 
@@ -171,42 +269,72 @@ function Dashboard() {
     };
   };
 
-  const completedCoursesCount = courses.filter((course) => {
-  const courseProgress = getCourseProgress(course);
 
-  return courseProgress.percentage >= 100;
-}).length;
+  // ===================================================
+  // COMPLETED COURSES
+  // ===================================================
 
-  // =========================
+  const completedCoursesCount =
+    courses.filter((course) => {
+
+      const courseProgress =
+        getCourseProgress(course);
+
+      return (
+        courseProgress.percentage >= 100
+      );
+
+    }).length;
+
+
+  // ===================================================
   // LOGOUT
-  // =========================
+  // ===================================================
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    navigate("/login");
+
+    localStorage.removeItem(
+      "access_token"
+    );
+
+    localStorage.removeItem(
+      "user_name"
+    );
+
+    navigate("/login", {
+      replace: true,
+    });
   };
+
+
+  // ===================================================
+  // DASHBOARD UI
+  // ===================================================
 
   return (
     <div className="app">
 
-      {/* =========================
-          SIDEBAR
-      ========================= */}
+      {/* SIDEBAR */}
 
       <aside className="sidebar">
 
         <div className="logo">
-  <img
-    src="/logo.png"
-    alt="LearnAI Logo"
-  />
 
-  <span>
-    LearnAI
-  </span>
-</div>
+          <img
+            src="/logo.png"
+            alt="LearnAI Logo"
+          />
+
+          <span>
+            LearnAI
+          </span>
+
+        </div>
+
 
         <nav className="nav">
+
+          {/* Dashboard */}
 
           <Link
             to="/"
@@ -216,54 +344,74 @@ function Dashboard() {
             Dashboard
           </Link>
 
+
+          {/* My Courses */}
+
+<Link
+  to="/courses"
+  className="nav-item"
+>
+  <span>📚</span>
+  My Courses
+</Link>
+
+
+          {/* AI Tutor */}
+
           <Link
-            to="/"
+            to="/ai-tutor"
             className="nav-item"
           >
-            <span>📚</span>
-            My Courses
+            <span>🤖</span>
+            AI Tutor
           </Link>
 
-          <Link
-  to="/ai-tutor"
-  className="nav-item"
->
-  <span>🤖</span>
-  AI Tutor
-</Link>
+
+          {/* Progress */}
 
           <Link
-  to="/progress"
-  className="nav-item"
->
-  <span>📈</span>
-  Progress
-</Link>
+            to="/progress"
+            className="nav-item"
+          >
+            <span>📈</span>
+            Progress
+          </Link>
+
+
+          {/* Certificates */}
 
           <Link
-  to="/certificates"
-  className="nav-item"
->
-  <span>🏆</span>
-  Certificates
-</Link>
+            to="/certificates"
+            className="nav-item"
+          >
+            <span>🏆</span>
+            Certificates
+          </Link>
 
         </nav>
 
+
+        {/* SIDEBAR BOTTOM */}
+
         <div className="sidebar-bottom">
 
-          <a
-            href="#"
+          {/* SETTINGS */}
+
+          <Link
+            to="/settings"
             className="nav-item"
-            onClick={(e) => e.preventDefault()}
           >
             <span>⚙</span>
             Settings
-          </a>
+          </Link>
+
+
+          {/* LOGOUT */}
 
           <button
             className="nav-item logout"
             onClick={handleLogout}
+            type="button"
           >
             <span>↪</span>
             Logout
@@ -273,9 +421,8 @@ function Dashboard() {
 
       </aside>
 
-      {/* =========================
-          MAIN CONTENT
-      ========================= */}
+
+      {/* MAIN */}
 
       <main className="main">
 
@@ -284,6 +431,7 @@ function Dashboard() {
         <header className="topbar">
 
           <div>
+
             <h1>
               Dashboard
             </h1>
@@ -291,15 +439,25 @@ function Dashboard() {
             <p>
               Continue your learning journey.
             </p>
+
           </div>
+
+
+          {/* PROFILE */}
 
           <div className="profile">
 
             <div className="avatar">
-  {userName.charAt(0).toUpperCase()}
-</div>
+
+              {userName
+                .charAt(0)
+                .toUpperCase()}
+
+            </div>
+
 
             <div>
+
               <strong>
                 {userName}
               </strong>
@@ -307,15 +465,15 @@ function Dashboard() {
               <span>
                 Student
               </span>
+
             </div>
 
           </div>
 
         </header>
 
-        {/* =========================
-            WELCOME CARD
-        ========================= */}
+
+        {/* WELCOME CARD */}
 
         <section className="welcome-card">
 
@@ -325,22 +483,30 @@ function Dashboard() {
               KEEP LEARNING
             </span>
 
+
             <h2>
-  Welcome back, {userName} 👋
-</h2>
+              Welcome back, {userName} 👋
+            </h2>
+
 
             <p>
-              Pick up where you left off and keep
-              building your skills.
+              Pick up where you left off
+              and keep building your skills.
             </p>
 
+
             <button
+              type="button"
               onClick={() => {
+
                 if (courses.length > 0) {
+
                   navigate(
                     `/courses/${courses[0].id}`
                   );
+
                 }
+
               }}
             >
               Continue Learning →
@@ -348,21 +514,22 @@ function Dashboard() {
 
           </div>
 
+
           <div className="welcome-icon">
             🧠
           </div>
 
         </section>
 
-        {/* =========================
-            COURSES
-        ========================= */}
 
-        <section>
+        {/* COURSES */}
+
+        <section id="courses">
 
           <div className="section-header">
 
             <div>
+
               <h2>
                 My Courses
               </h2>
@@ -370,16 +537,16 @@ function Dashboard() {
               <p>
                 Your current learning progress
               </p>
+
             </div>
 
-            <Link
-              to="/"
-              className="view-all"
-            >
-              View All →
-            </Link>
+
+            <span className="view-all">
+              {courses.length} Courses
+            </span>
 
           </div>
+
 
           <div className="course-grid">
 
@@ -403,28 +570,45 @@ function Dashboard() {
                   getCourseProgress(course);
 
                 return (
+
                   <Link
                     to={`/courses/${course.id}`}
                     className="course-card"
                     key={course.id}
                   >
 
+                    {/* COURSE IMAGE */}
+
                     <div className="course-icon">
-  <img
-    src={
-      course.title === "Python Programming"
-        ? "/courses/python.png"
-        : course.title === "Web Development"
-        ? "/courses/webdevelopment.png"
-        : course.title === "Artificial Intelligence"
-        ? "/courses/ai.jpg"
-        : course.title === "React"
-        ? "/courses/react.png"
-        : "/courses/react.png"
-    }
-    alt={course.title}
-  />
-</div>
+
+                      <img
+                        src={
+                          course.title ===
+                          "Python Programming"
+                            ? "/courses/python.png"
+
+                            : course.title ===
+                              "Web Development"
+                            ? "/courses/webdevelopment.png"
+
+                            : course.title ===
+                              "Artificial Intelligence"
+                            ? "/courses/ai.jpg"
+
+                            : course.title ===
+                              "React"
+                            ? "/courses/react.png"
+
+                            : "/courses/react.png"
+                        }
+
+                        alt={course.title}
+                      />
+
+                    </div>
+
+
+                    {/* COURSE INFO */}
 
                     <div className="course-info">
 
@@ -432,33 +616,42 @@ function Dashboard() {
                         {course.category}
                       </span>
 
+
                       <h3>
                         {course.title}
                       </h3>
+
 
                       <p>
                         {course.description}
                       </p>
 
+
                       <div className="progress-info">
 
                         <span>
-                          {courseProgress.percentage}% Complete
+                          {courseProgress.percentage}%
+                          {" "}Complete
                         </span>
 
+
                         <span>
-                          {courseProgress.completed} /{" "}
-                          {courseProgress.total} lessons
+                          {courseProgress.completed}
+                          {" "}/{" "}
+                          {courseProgress.total}
+                          {" "}lessons
                         </span>
 
                       </div>
+
 
                       <div className="progress">
 
                         <div
                           className="progress-fill"
                           style={{
-                            width: `${courseProgress.percentage}%`,
+                            width:
+                              `${courseProgress.percentage}%`,
                           }}
                         />
 
@@ -467,7 +660,9 @@ function Dashboard() {
                     </div>
 
                   </Link>
+
                 );
+
               })
 
             )}
@@ -476,11 +671,11 @@ function Dashboard() {
 
         </section>
 
-        {/* =========================
-            STATS
-        ========================= */}
+
+        {/* STATS */}
 
         <section className="stats-section">
+
 
           {/* STREAK */}
 
@@ -491,6 +686,7 @@ function Dashboard() {
             </span>
 
             <div>
+
               <strong>
                 7
               </strong>
@@ -498,11 +694,13 @@ function Dashboard() {
               <p>
                 Day Streak
               </p>
+
             </div>
 
           </div>
 
-          {/* TOTAL XP */}
+
+          {/* XP */}
 
           <div className="stat-card">
 
@@ -526,7 +724,8 @@ function Dashboard() {
 
           </div>
 
-          {/* COMPLETED LESSONS */}
+
+          {/* LESSONS */}
 
           <div className="stat-card">
 
@@ -549,6 +748,7 @@ function Dashboard() {
             </div>
 
           </div>
+
 
           {/* CERTIFICATES */}
 
@@ -580,93 +780,160 @@ function Dashboard() {
   );
 }
 
-// =========================
+
+// =====================================================
 // APP ROUTES
-// =========================
+// =====================================================
 
 function App() {
+
   return (
+
     <BrowserRouter>
 
       <Routes>
 
-        <Route
-  path="/"
-  element={
-    <ProtectedRoute>
-      <Dashboard />
-    </ProtectedRoute>
-  }
-/>
+        {/* LOGIN */}
 
         <Route
           path="/login"
           element={<Login />}
         />
 
+
+        {/* REGISTER */}
+
         <Route
           path="/register"
           element={<Register />}
         />
 
-        <Route
-  path="/progress"
-  element={
-    <ProtectedRoute>
-      <Progress />
-    </ProtectedRoute>
-  }
-/>
+
+        {/* DASHBOARD */}
 
         <Route
-  path="/courses/:courseId"
-  element={
-    <ProtectedRoute>
-      <CourseDetails />
-    </ProtectedRoute>
-  }
-/>
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* MY COURSES */}
 
         <Route
-  path="/lessons/:lessonId"
-  element={
-    <ProtectedRoute>
-      <Lesson />
-    </ProtectedRoute>
-  }
-/>
+          path="/courses"
+          element={
+            <ProtectedRoute>
+              <MyCourses />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* COURSE DETAILS */}
+
         <Route
-  path="/ai-tutor"
-  element={
-    <ProtectedRoute>
-      <AITutor />
-    </ProtectedRoute>
-  }
-/>
-
-<Route
-  path="/quiz/:lessonId"
-  element={
-    <ProtectedRoute>
-      <Quiz />
-    </ProtectedRoute>
-  }
-/>
-<Route
-  path="/certificates"
-  element={
-    <ProtectedRoute>
-      <Certificates />
-    </ProtectedRoute>
-  }
-/>
+          path="/courses/:courseId"
+          element={
+            <ProtectedRoute>
+              <CourseDetails />
+            </ProtectedRoute>
+          }
+        />
 
 
+        {/* LESSON */}
+
+        <Route
+          path="/lessons/:lessonId"
+          element={
+            <ProtectedRoute>
+              <Lesson />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* PROGRESS */}
+
+        <Route
+          path="/progress"
+          element={
+            <ProtectedRoute>
+              <Progress />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* AI TUTOR */}
+
+        <Route
+          path="/ai-tutor"
+          element={
+            <ProtectedRoute>
+              <AITutor />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* QUIZ */}
+
+        <Route
+          path="/quiz/:lessonId"
+          element={
+            <ProtectedRoute>
+              <Quiz />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* CERTIFICATES */}
+
+        <Route
+          path="/certificates"
+          element={
+            <ProtectedRoute>
+              <Certificates />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* SETTINGS */}
+
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+
+
+        {/* UNKNOWN URL */}
+
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
+        />
 
       </Routes>
 
     </BrowserRouter>
+
   );
 }
 
 export default App;
+

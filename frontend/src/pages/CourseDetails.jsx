@@ -1,10 +1,12 @@
+
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 function CourseDetails() {
   const { courseId } = useParams();
+  const navigate = useNavigate();
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ function CourseDetails() {
     const loadProgress = async () => {
       const token = localStorage.getItem("access_token");
 
-      if (!token) {
+      if (!token || token === "undefined" || token === "null") {
         setProgressLoading(false);
         return;
       }
@@ -105,41 +107,38 @@ function CourseDetails() {
   if (!course) {
     return (
       <div className="course-page">
-
-        <h2>
-          Course not found
-        </h2>
+        <h2>Course not found</h2>
 
         <Link to="/">
           ← Back to Dashboard
         </Link>
-
       </div>
     );
   }
 
   // =========================
-  // CALCULATE PROGRESS
+  // GET ALL LESSONS
   // =========================
 
-  let totalLessons = 0;
-  let completedLessons = 0;
+  const allLessons = [];
 
   course.levels?.forEach((level) => {
     level.chapters?.forEach((chapter) => {
       chapter.lessons?.forEach((lesson) => {
-
-        totalLessons++;
-
-        if (
-          completedLessonIds.includes(lesson.id)
-        ) {
-          completedLessons++;
-        }
-
+        allLessons.push(lesson);
       });
     });
   });
+
+  // =========================
+  // CALCULATE PROGRESS
+  // =========================
+
+  const totalLessons = allLessons.length;
+
+  const completedLessons = allLessons.filter((lesson) =>
+    completedLessonIds.includes(lesson.id)
+  ).length;
 
   const courseProgress =
     totalLessons > 0
@@ -149,13 +148,40 @@ function CourseDetails() {
       : 0;
 
   // =========================
-  // UI
+  // FIND NEXT LESSON
   // =========================
+
+  const nextLesson = allLessons.find(
+    (lesson) =>
+      !completedLessonIds.includes(lesson.id)
+  );
+
+  // =========================
+  // CONTINUE LEARNING
+  // =========================
+
+  const handleContinueLearning = () => {
+    if (nextLesson) {
+      navigate(`/lessons/${nextLesson.id}`);
+      return;
+    }
+
+    // If every lesson is completed,
+    // open the last lesson.
+    if (allLessons.length > 0) {
+      const lastLesson =
+        allLessons[allLessons.length - 1];
+
+      navigate(`/lessons/${lastLesson.id}`);
+    }
+  };
 
   return (
     <div className="course-page">
 
-      {/* BACK */}
+      {/* =========================
+          BACK
+      ========================= */}
 
       <Link
         to="/"
@@ -213,6 +239,7 @@ function CourseDetails() {
         <div className="course-progress-header">
 
           <div>
+
             <strong>
               Your Progress
             </strong>
@@ -221,6 +248,7 @@ function CourseDetails() {
               {completedLessons} of{" "}
               {totalLessons} lessons completed
             </p>
+
           </div>
 
           <strong>
@@ -239,6 +267,24 @@ function CourseDetails() {
           />
 
         </div>
+
+        {/* =========================
+            CONTINUE BUTTON
+        ========================= */}
+
+        {!progressLoading &&
+          allLessons.length > 0 && (
+
+          <button
+            className="continue-course-button"
+            onClick={handleContinueLearning}
+          >
+            {courseProgress === 100
+              ? "Review Course →"
+              : "Continue Learning →"}
+          </button>
+
+        )}
 
       </section>
 
@@ -276,7 +322,7 @@ function CourseDetails() {
               </div>
 
               <span>
-                {level.chapters.length} Chapters
+                {level.chapters?.length || 0} Chapters
               </span>
 
             </div>
@@ -307,7 +353,7 @@ function CourseDetails() {
                       </h4>
 
                       <p>
-                        {chapter.lessons.length} Lessons
+                        {chapter.lessons?.length || 0} Lessons
                       </p>
 
                     </div>
@@ -345,7 +391,9 @@ function CourseDetails() {
                                 : "lesson-icon"
                             }
                           >
-                            {isCompleted ? "✓" : "▶"}
+                            {isCompleted
+                              ? "✓"
+                              : "▶"}
                           </div>
 
                           {/* LESSON INFO */}
@@ -363,7 +411,7 @@ function CourseDetails() {
 
                           </div>
 
-                          {/* COMPLETED BADGE / ARROW */}
+                          {/* STATUS */}
 
                           {isCompleted ? (
 
@@ -403,3 +451,4 @@ function CourseDetails() {
 }
 
 export default CourseDetails;
+

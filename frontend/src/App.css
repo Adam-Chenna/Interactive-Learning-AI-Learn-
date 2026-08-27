@@ -5026,3 +5026,2092 @@ body::before {
   object-fit: contain;
   border-radius: 10px;
 }
+
+/* =========================================
+   COURSE CONTINUE BUTTON
+========================================= */
+
+.continue-course-button {
+  margin-top: 22px;
+  padding: 12px 22px;
+
+  border: none;
+  border-radius: 10px;
+
+  background: linear-gradient(
+    135deg,
+    #8b5cf6,
+    #a855f7
+  );
+
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 20px rgba(139, 92, 246, 0.25);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.continue-course-button:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 12px 28px rgba(139, 92, 246, 0.35);
+}
+
+.continue-course-button:active {
+  transform: translateY(0);
+}
+
+.continue-course-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Sidebar bottom buttons */
+.sidebar-bottom .nav-item {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.sidebar-bottom .nav-item:hover {
+  background: rgba(139, 92, 246, 0.10);
+  color: #ffffff;
+}
+
+.sidebar-bottom .logout {
+  background: transparent;
+  color: #9ca3af;
+}
+
+.sidebar-bottom .logout:hover {
+  background: rgba(239, 68, 68, 0.10);
+  color: #ffffff;
+}
+
+/* =========================================================
+   PREMIUM MOTION SYSTEM
+========================================================= */
+
+@keyframes floatCard {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes softGlow {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 rgba(139, 92, 246, 0),
+      0 20px 60px rgba(0, 0, 0, 0.25);
+  }
+
+  50% {
+    box-shadow:
+      0 0 45px rgba(139, 92, 246, 0.12),
+      0 25px 70px rgba(0, 0, 0, 0.35);
+  }
+}
+
+@keyframes progressShimmer {
+  0% {
+    background-position: -200px 0;
+  }
+
+  100% {
+    background-position: 200px 0;
+  }
+}
+
+@keyframes iconFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-7px) rotate(2deg);
+  }
+}
+
+@keyframes buttonShine {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.welcome-card {
+  position: relative;
+  overflow: hidden;
+  animation: softGlow 5s ease-in-out infinite;
+  transition:
+    transform 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.welcome-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(139, 92, 246, 0.45);
+}
+
+.welcome-icon {
+  animation: iconFloat 4s ease-in-out infinite;
+  transform-origin: center;
+  filter: drop-shadow(0 0 20px rgba(139, 92, 246, 0.25));
+}
+
+.welcome-card button {
+  position: relative;
+  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.welcome-card button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  transform: translateX(-120%);
+}
+
+.welcome-card button:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 25px rgba(139, 92, 246, 0.35);
+}
+
+.welcome-card button:hover::before {
+  animation: buttonShine 0.8s ease;
+}
+
+.welcome-card button:active {
+  transform: scale(0.97);
+}
+
+.progress-fill {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    #7c3aed,
+    #a78bfa,
+    #7c3aed
+  );
+  background-size: 200px 100%;
+  animation: progressShimmer 2.5s linear infinite;
+}
+
+@keyframes loginFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes ambientMove {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate3d(40px, -25px, 0) scale(1.08);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.login-page {
+  position: relative;
+  overflow: hidden;
+  min-height: 100vh;
+}
+
+.login-card {
+  position: relative;
+  z-index: 2;
+  animation:
+    loginFloat 5s ease-in-out infinite,
+    softGlow 5s ease-in-out infinite;
+
+  transition:
+    transform 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.login-card:hover {
+  border-color: rgba(139, 92, 246, 0.4);
+}
+
+.login-card input {
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease,
+    transform 0.2s ease;
+}
+
+.login-card input:hover {
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  background: #171923;
+  box-shadow:
+    0 0 0 3px rgba(139, 92, 246, 0.12),
+    0 0 25px rgba(139, 92, 246, 0.08);
+
+  transform: translateY(-1px);
+}
+
+.login-card button[type="submit"] {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.25s ease;
+}
+
+.login-card button[type="submit"]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.3),
+    transparent
+  );
+
+  transition: left 0.6s ease;
+}
+
+.login-card button[type="submit"]:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 30px rgba(139, 92, 246, 0.25);
+}
+
+.login-card button[type="submit"]:hover::after {
+  left: 140%;
+}
+
+.login-card button[type="submit"]:active {
+  transform: scale(0.98);
+}
+
+.login-page::before,
+.login-page::after {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+
+  filter: blur(100px);
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.login-page::before {
+  top: -180px;
+  left: -120px;
+  background: #7c3aed;
+  animation: ambientMove 9s ease-in-out infinite;
+}
+
+.login-page::after {
+  right: -160px;
+  bottom: -180px;
+  background: #ec4899;
+  animation: ambientMove 11s ease-in-out infinite reverse;
+}
+
+/* =========================================================
+   LEARNAI — PREMIUM INTERACTIVE MOTION
+   Continue Learning + Login
+========================================================= */
+
+/* ---------- CONTINUE LEARNING ---------- */
+
+.welcome-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Moving ambient glow */
+.welcome-card::before {
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  right: -90px;
+  top: -120px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(168, 85, 247, 0.28),
+    transparent 68%
+  );
+  filter: blur(15px);
+  pointer-events: none;
+  z-index: -1;
+  animation: welcomeOrb 7s ease-in-out infinite;
+}
+
+.welcome-card::after {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  left: 35%;
+  bottom: -150px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(96, 165, 250, 0.16),
+    transparent 70%
+  );
+  filter: blur(20px);
+  pointer-events: none;
+  z-index: -1;
+  animation: welcomeOrbTwo 9s ease-in-out infinite;
+}
+
+@keyframes welcomeOrb {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-45px, 35px) scale(1.15);
+  }
+}
+
+@keyframes welcomeOrbTwo {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(80px, -35px);
+  }
+}
+
+/* Floating brain / welcome icon */
+.welcome-icon {
+  animation:
+    premiumFloat 4s ease-in-out infinite,
+    premiumPulse 4s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+@keyframes premiumFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-12px) rotate(3deg);
+  }
+}
+
+@keyframes premiumPulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.15));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 28px rgba(168, 85, 247, 0.42));
+  }
+}
+
+/* Continue Learning button */
+.welcome-card button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  border: none;
+  cursor: pointer;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+/* Moving shine */
+.welcome-card button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -130%;
+
+  width: 70%;
+  height: 100%;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+.welcome-card button:hover {
+  transform: translateY(-4px) scale(1.02);
+
+  box-shadow:
+    0 12px 30px rgba(139, 92, 246, 0.35),
+    0 0 25px rgba(139, 92, 246, 0.15);
+}
+
+.welcome-card button:hover::before {
+  animation: buttonShinePremium 0.8s ease;
+}
+
+@keyframes buttonShinePremium {
+  from {
+    left: -130%;
+  }
+
+  to {
+    left: 150%;
+  }
+}
+
+.welcome-card button:active {
+  transform: translateY(-1px) scale(0.97);
+}
+
+
+/* =========================================================
+   LOGIN PAGE — PREMIUM AMBIENT ANIMATION
+========================================================= */
+
+.auth-page {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Purple floating orb */
+.auth-page::before {
+  content: "";
+  position: absolute;
+
+  width: 420px;
+  height: 420px;
+
+  left: -150px;
+  top: -140px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(139, 92, 246, 0.28),
+      rgba(124, 58, 237, 0.05) 55%,
+      transparent 72%
+    );
+
+  filter: blur(25px);
+  pointer-events: none;
+
+  animation: loginOrbOne 10s ease-in-out infinite;
+}
+
+/* Pink ambient orb */
+.auth-page::after {
+  content: "";
+  position: absolute;
+
+  width: 420px;
+  height: 420px;
+
+  right: -170px;
+  bottom: -160px;
+
+  border-radius: 50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(236, 72, 153, 0.20),
+      rgba(168, 85, 247, 0.06) 55%,
+      transparent 72%
+    );
+
+  filter: blur(30px);
+  pointer-events: none;
+
+  animation: loginOrbTwo 12s ease-in-out infinite;
+}
+
+@keyframes loginOrbOne {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(100px, 70px) scale(1.18);
+  }
+}
+
+@keyframes loginOrbTwo {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-80px, -60px) scale(1.15);
+  }
+}
+
+
+/* ---------- LOGIN CARD ---------- */
+
+.auth-card {
+  position: relative;
+  z-index: 2;
+
+  animation: authCardFloat 6s ease-in-out infinite;
+
+  transition:
+    transform 0.35s ease,
+    border-color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+.auth-card:hover {
+  transform: translateY(-5px);
+
+  border-color: rgba(167, 139, 250, 0.30) !important;
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.45),
+    0 0 45px rgba(139, 92, 246, 0.10);
+}
+
+@keyframes authCardFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+
+/* ---------- LOGIN LOGO ---------- */
+
+.auth-logo .logo-icon {
+  animation: loginLogoPulse 3s ease-in-out infinite;
+}
+
+@keyframes loginLogoPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 8px 25px rgba(139, 92, 246, 0.25);
+  }
+
+  50% {
+    transform: scale(1.06) rotate(2deg);
+    box-shadow:
+      0 10px 35px rgba(139, 92, 246, 0.45);
+  }
+}
+
+
+/* ---------- LOGIN INPUTS ---------- */
+
+.auth-card input {
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.auth-card input:hover {
+  transform: translateY(-1px);
+  border-color: rgba(167, 139, 250, 0.30) !important;
+}
+
+.auth-card input:focus {
+  transform: translateY(-2px);
+
+  border-color: rgba(167, 139, 250, 0.75) !important;
+
+  box-shadow:
+    0 0 0 3px rgba(139, 92, 246, 0.10),
+    0 0 25px rgba(139, 92, 246, 0.10) !important;
+}
+
+
+/* ---------- LOGIN BUTTON ---------- */
+
+.auth-card button {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.auth-card button::before {
+  content: "";
+
+  position: absolute;
+  top: 0;
+  left: -130%;
+
+  width: 65%;
+  height: 100%;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.38),
+    transparent
+  );
+
+  transform: skewX(-20deg);
+  pointer-events: none;
+}
+
+.auth-card button:hover {
+  transform: translateY(-3px) scale(1.01);
+
+  box-shadow:
+    0 14px 35px rgba(139, 92, 246, 0.30),
+    0 0 25px rgba(139, 92, 246, 0.12);
+}
+
+.auth-card button:hover::before {
+  animation: loginButtonShine 0.8s ease;
+}
+
+@keyframes loginButtonShine {
+  from {
+    left: -130%;
+  }
+
+  to {
+    left: 150%;
+  }
+}
+
+.auth-card button:active {
+  transform: scale(0.97);
+}
+
+
+/* ---------- CREATE ACCOUNT LINK ---------- */
+
+.auth-card a {
+  position: relative;
+  transition:
+    color 0.2s ease,
+    text-shadow 0.2s ease;
+}
+
+.auth-card a:hover {
+  color: #ddd6fe !important;
+
+  text-shadow:
+    0 0 12px rgba(167, 139, 250, 0.45);
+}
+
+
+/* =========================================================
+   REDUCED MOTION ACCESSIBILITY
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-card,
+  .welcome-card::before,
+  .welcome-card::after,
+  .welcome-icon,
+  .auth-page::before,
+  .auth-page::after,
+  .auth-card,
+  .auth-logo .logo-icon {
+    animation: none !important;
+  }
+
+  .welcome-card button,
+  .auth-card,
+  .auth-card input,
+  .auth-card button {
+    transition: none !important;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 600px) {
+  .welcome-card::before,
+  .welcome-card::after,
+  .auth-page::before,
+  .auth-page::after {
+    opacity: 0.55;
+  }
+
+  .welcome-icon {
+    font-size: 65px;
+  }
+
+  .auth-card:hover {
+    transform: none;
+  }
+}
+
+/* =====================================================
+   SETTINGS PAGE
+   ===================================================== */
+
+.settings-page {
+  min-height: 100vh;
+  position: relative;
+  padding: 42px 48px 120px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 80% 10%,
+      rgba(145, 92, 255, 0.08),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 15% 80%,
+      rgba(99, 102, 241, 0.05),
+      transparent 30%
+    );
+  animation: settingsPageIn 0.5s ease;
+}
+
+.settings-glow {
+  position: fixed;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  filter: blur(100px);
+  pointer-events: none;
+  opacity: 0.08;
+  z-index: 0;
+}
+
+.settings-glow-one {
+  top: 5%;
+  right: 8%;
+  background: #8b5cf6;
+  animation: settingsFloat 8s ease-in-out infinite;
+}
+
+.settings-glow-two {
+  bottom: 5%;
+  left: 15%;
+  background: #6366f1;
+  animation: settingsFloat 10s ease-in-out infinite reverse;
+}
+
+.settings-header {
+  position: relative;
+  z-index: 1;
+  max-width: 1050px;
+  margin: 0 auto 34px;
+}
+
+.settings-back {
+  border: 0;
+  background: transparent;
+  color: #a9a2c7;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 30px;
+  transition: 0.25s ease;
+}
+
+.settings-back:hover {
+  color: #c4a7ff;
+  transform: translateX(-4px);
+}
+
+.settings-label {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #bba2ff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 38px;
+  line-height: 1.1;
+  letter-spacing: -1.2px;
+}
+
+.settings-header p {
+  margin: 10px 0 0;
+  color: #89849a;
+  font-size: 15px;
+}
+
+/* =====================================================
+   SETTINGS LAYOUT
+   ===================================================== */
+
+.settings-layout {
+  position: relative;
+  z-index: 1;
+  max-width: 1050px;
+  margin: 0 auto;
+  display: grid;
+  gap: 18px;
+}
+
+.settings-card {
+  position: relative;
+  overflow: hidden;
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(26, 26, 36, 0.96),
+      rgba(17, 17, 25, 0.96)
+    );
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+  animation: settingsCardIn 0.55s ease both;
+}
+
+.settings-card:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.settings-card:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.settings-card:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.settings-card:nth-child(5) {
+  animation-delay: 0.2s;
+}
+
+.settings-card:nth-child(6) {
+  animation-delay: 0.25s;
+}
+
+.settings-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(157, 123, 255, 0.22);
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.28),
+    0 0 35px rgba(139, 92, 246, 0.04);
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.settings-section-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(169, 126, 255, 0.2);
+  border-radius: 13px;
+  background: rgba(139, 92, 246, 0.1);
+  font-size: 19px;
+  box-shadow: inset 0 0 20px rgba(139, 92, 246, 0.04);
+}
+
+.settings-card-header h2 {
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.settings-card-header p {
+  margin: 0;
+  color: #858092;
+  font-size: 13px;
+}
+
+/* =====================================================
+   PROFILE
+   ===================================================== */
+
+.profile-preview {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 25px;
+  padding: 16px;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.settings-avatar {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  color: white;
+  font-size: 21px;
+  font-weight: 800;
+  background: linear-gradient(
+    135deg,
+    #a970ff,
+    #7448d8
+  );
+  box-shadow:
+    0 8px 25px rgba(139, 92, 246, 0.3);
+  animation: avatarPulse 3s ease-in-out infinite;
+}
+
+.profile-preview strong {
+  display: block;
+  font-size: 16px;
+}
+
+.profile-preview span {
+  display: block;
+  margin-top: 4px;
+  color: #858092;
+  font-size: 12px;
+}
+
+.settings-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.settings-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #aaa4b7;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.settings-field input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 11px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.035);
+  color: #f5f3fa;
+  font-size: 14px;
+  transition: 0.25s ease;
+}
+
+.settings-field input:focus {
+  border-color: rgba(157, 123, 255, 0.65);
+  background: rgba(139, 92, 246, 0.055);
+  box-shadow:
+    0 0 0 3px rgba(139, 92, 246, 0.08);
+}
+
+/* =====================================================
+   SETTINGS OPTIONS
+   ===================================================== */
+
+.settings-option {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 13px 0;
+}
+
+.settings-option-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 17px;
+}
+
+.settings-option-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-option-content strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.settings-option-content span {
+  display: block;
+  color: #807b8c;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.settings-divider {
+  height: 1px;
+  margin: 7px 0;
+  background: rgba(255, 255, 255, 0.055);
+}
+
+/* =====================================================
+   PREMIUM TOGGLE
+   ===================================================== */
+
+.settings-toggle {
+  position: relative;
+  width: 48px;
+  height: 27px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: #292832;
+  cursor: pointer;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.settings-toggle span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #aaa6b5;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition:
+    transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background 0.3s ease;
+}
+
+.settings-toggle.active {
+  border-color: rgba(157, 123, 255, 0.7);
+  background: linear-gradient(
+    135deg,
+    #9c6cff,
+    #7146d3
+  );
+  box-shadow:
+    0 0 18px rgba(139, 92, 246, 0.25);
+}
+
+.settings-toggle.active span {
+  transform: translateX(21px);
+  background: white;
+}
+
+/* =====================================================
+   SECURITY
+   ===================================================== */
+
+.security-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.security-row strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.security-row span:not(.session-badge) {
+  color: #807b8c;
+  font-size: 12px;
+}
+
+.session-badge {
+  padding: 7px 11px;
+  border: 1px solid rgba(75, 220, 145, 0.16);
+  border-radius: 999px;
+  color: #6de5a3;
+  background: rgba(75, 220, 145, 0.07);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* =====================================================
+   DANGER
+   ===================================================== */
+
+.danger-card {
+  border-color: rgba(255, 90, 110, 0.1);
+}
+
+.danger-card:hover {
+  border-color: rgba(255, 90, 110, 0.25);
+}
+
+.danger-icon {
+  border-color: rgba(255, 90, 110, 0.18);
+  background: rgba(255, 90, 110, 0.07);
+}
+
+.danger-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 90, 110, 0.025);
+  border: 1px solid rgba(255, 90, 110, 0.08);
+}
+
+.danger-action strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.danger-action span {
+  color: #807b8c;
+  font-size: 12px;
+}
+
+.danger-button {
+  padding: 10px 17px;
+  border: 1px solid rgba(255, 90, 110, 0.25);
+  border-radius: 10px;
+  color: #ff8898;
+  background: rgba(255, 90, 110, 0.07);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.danger-button:hover {
+  color: white;
+  background: rgba(255, 70, 95, 0.16);
+  border-color: rgba(255, 90, 110, 0.5);
+  transform: translateY(-1px);
+}
+
+/* =====================================================
+   SAVE BAR
+   ===================================================== */
+
+.settings-save-bar {
+  position: fixed;
+  z-index: 20;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1050px, calc(100% - 40px));
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 12px 14px 12px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  background: rgba(22, 21, 30, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.35);
+  animation: saveBarIn 0.5s ease;
+}
+
+.settings-save-bar > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #898494;
+  font-size: 12px;
+}
+
+.save-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7ee7a8;
+  box-shadow:
+    0 0 10px rgba(126, 231, 168, 0.7);
+  animation: statusPulse 2s infinite;
+}
+
+.save-settings-button {
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 10px;
+  color: #16131f;
+  background: linear-gradient(
+    135deg,
+    #f1eef8,
+    #c9c2d8
+  );
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.save-settings-button:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 25px rgba(200, 190, 225, 0.16);
+}
+
+.save-settings-button.saved {
+  color: white;
+  background: linear-gradient(
+    135deg,
+    #7652d8,
+    #9b72ff
+  );
+  animation: savedPop 0.35s ease;
+}
+
+/* =====================================================
+   ANIMATIONS
+   ===================================================== */
+
+@keyframes settingsPageIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes settingsCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes saveBarIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes avatarPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 8px 25px rgba(139, 92, 246, 0.25);
+  }
+
+  50% {
+    box-shadow:
+      0 8px 32px rgba(139, 92, 246, 0.42);
+  }
+}
+
+@keyframes settingsFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(25px, -20px, 0);
+  }
+}
+
+@keyframes statusPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes savedPop {
+  0% {
+    transform: scale(0.95);
+  }
+
+  70% {
+    transform: scale(1.04);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* =====================================================
+   REDUCED MOTION
+   ===================================================== */
+
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 700px) {
+  .settings-page {
+    padding: 30px 18px 110px;
+  }
+
+  .settings-header h1 {
+    font-size: 31px;
+  }
+
+  .settings-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-card {
+    padding: 20px;
+    border-radius: 17px;
+  }
+
+  .settings-option {
+    align-items: flex-start;
+  }
+
+  .settings-toggle {
+    margin-top: 4px;
+  }
+
+  .security-row,
+  .danger-action {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .danger-button {
+    width: 100%;
+  }
+
+  .settings-save-bar {
+    width: calc(100% - 24px);
+    bottom: 12px;
+  }
+
+  .settings-save-bar > div {
+    display: none;
+  }
+
+  .save-settings-button {
+    width: 100%;
+  }
+}
+
+/* =====================================================
+   MY COURSES PAGE
+===================================================== */
+
+.courses-page-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 180px;
+  padding: 32px 36px;
+  margin-bottom: 34px;
+
+  background:
+    radial-gradient(
+      circle at 85% 30%,
+      rgba(145, 91, 255, 0.16),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #171720,
+      #111117
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.courses-page-hero::before {
+  content: "";
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  right: 80px;
+  top: -100px;
+
+  background: rgba(145, 91, 255, 0.12);
+  border-radius: 50%;
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.courses-page-hero > div:first-child {
+  position: relative;
+  z-index: 2;
+  max-width: 650px;
+}
+
+.courses-page-hero h2 {
+  margin: 8px 0 10px;
+  font-size: 28px;
+  font-weight: 750;
+  color: #ffffff;
+}
+
+.courses-page-hero p {
+  margin: 0;
+  color: #9b9baa;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.courses-hero-icon {
+  position: relative;
+  z-index: 2;
+
+  width: 88px;
+  height: 88px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 42px;
+
+  border-radius: 24px;
+
+  background: rgba(145, 91, 255, 0.12);
+  border: 1px solid rgba(145, 91, 255, 0.25);
+
+  box-shadow:
+    0 0 40px rgba(145, 91, 255, 0.12);
+
+  animation: coursesFloat 4s ease-in-out infinite;
+}
+
+@keyframes coursesFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+
+/* =====================================================
+   COURSES HEADER
+===================================================== */
+
+.courses-header {
+  margin-bottom: 18px;
+}
+
+.courses-header .view-all {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+/* =====================================================
+   MY COURSES GRID
+===================================================== */
+
+.my-courses-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 20px;
+
+  width: 100%;
+}
+
+
+/* =====================================================
+   COURSE CARD
+===================================================== */
+
+.my-course-card {
+  position: relative;
+
+  min-width: 0;
+  padding: 24px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(25, 25, 34, 0.98),
+      rgba(17, 17, 24, 0.98)
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+
+  overflow: hidden;
+}
+
+.my-course-card::before {
+  content: "";
+
+  position: absolute;
+
+  width: 180px;
+  height: 180px;
+
+  right: -80px;
+  top: -90px;
+
+  background: rgba(145, 91, 255, 0.08);
+
+  border-radius: 50%;
+
+  filter: blur(25px);
+
+  pointer-events: none;
+}
+
+.my-course-card:hover {
+  transform: translateY(-5px);
+
+  border-color:
+    rgba(145, 91, 255, 0.35);
+
+  box-shadow:
+    0 18px 45px rgba(0, 0, 0, 0.35),
+    0 0 30px rgba(145, 91, 255, 0.06);
+}
+
+
+/* =====================================================
+   COURSE TOP
+===================================================== */
+
+.my-course-top {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  margin-bottom: 22px;
+}
+
+
+/* =====================================================
+   COURSE IMAGE
+===================================================== */
+
+.my-course-icon {
+  width: 76px;
+  height: 76px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.12);
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.my-course-icon img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: contain;
+}
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+.course-status {
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  color: #c9b4ff;
+
+  background:
+    rgba(145, 91, 255, 0.10);
+
+  border: 1px solid
+    rgba(145, 91, 255, 0.20);
+}
+
+
+/* =====================================================
+   COURSE TEXT
+===================================================== */
+
+.my-course-card .category {
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: #b79aff;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.my-course-card h3 {
+  margin: 0 0 9px;
+
+  color: #ffffff;
+
+  font-size: 21px;
+  font-weight: 750;
+
+  line-height: 1.25;
+}
+
+.my-course-description {
+  min-height: 44px;
+
+  margin: 0 0 22px;
+
+  color: #9696a5;
+
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+
+/* =====================================================
+   COURSE PROGRESS
+===================================================== */
+
+.my-course-progress-info {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: center;
+
+  margin-bottom: 9px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #858596;
+}
+
+.my-course-progress-info span:first-child {
+  color: #b9a3ff;
+}
+
+
+/* =====================================================
+   PROGRESS BAR
+===================================================== */
+
+.my-course-card .progress {
+  width: 100%;
+  height: 6px;
+
+  margin-bottom: 20px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #25252e;
+}
+
+.my-course-card .progress-fill {
+  height: 100%;
+
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      #8b5cf6,
+      #b58cff
+    );
+
+  box-shadow:
+    0 0 12px rgba(139, 92, 246, 0.45);
+
+  transition: width 0.6s ease;
+}
+
+
+/* =====================================================
+   CONTINUE BUTTON
+===================================================== */
+
+.course-continue-button {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+
+  padding: 12px 15px;
+
+  border-radius: 12px;
+
+  background:
+    rgba(255, 255, 255, 0.045);
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.08);
+
+  color: #ffffff;
+
+  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.course-continue-button span {
+  font-size: 17px;
+
+  transition:
+    transform 0.2s ease;
+}
+
+.course-continue-button:hover {
+  background:
+    rgba(145, 91, 255, 0.14);
+
+  border-color:
+    rgba(145, 91, 255, 0.3);
+}
+
+.course-continue-button:hover span {
+  transform: translateX(4px);
+}
+
+
+/* =====================================================
+   LOADING
+===================================================== */
+
+.page-loading {
+  min-height: 400px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 14px;
+
+  color: #9999a8;
+}
+
+.loading-spinner {
+  width: 34px;
+  height: 34px;
+
+  border: 3px solid
+    rgba(255, 255, 255, 0.08);
+
+  border-top-color: #9b6cff;
+
+  border-radius: 50%;
+
+  animation:
+    loadingSpin 0.8s linear infinite;
+}
+
+@keyframes loadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 1000px) {
+
+  .my-courses-grid {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+@media (max-width: 700px) {
+
+  .courses-page-hero {
+    padding: 24px;
+
+    min-height: 160px;
+  }
+
+  .courses-page-hero h2 {
+    font-size: 23px;
+  }
+
+  .courses-hero-icon {
+    width: 65px;
+    height: 65px;
+
+    font-size: 30px;
+  }
+
+}
+
+
+@media (max-width: 520px) {
+
+  .my-course-card {
+    padding: 19px;
+  }
+
+  .my-course-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .course-status {
+    font-size: 10px;
+  }
+
+  .my-course-card h3 {
+    font-size: 18px;
+  }
+
+  .my-course-description {
+    min-height: auto;
+  }
+
+}
+
+/* =========================================================
+   PASSWORD INPUT WITH EYE TOGGLE
+========================================================= */
+
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding-right: 48px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  margin: 0;
+
+  background: transparent;
+  border: none;
+
+  color: #64748b;
+  font-size: 18px;
+
+  cursor: pointer;
+
+  border-radius: 8px;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.password-toggle:hover {
+  background: #f1f5f9;
+  color: #2563eb;
+}
+
+.password-toggle:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+.password-toggle:focus {
+  outline: none;
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}

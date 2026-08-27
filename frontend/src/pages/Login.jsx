@@ -1,139 +1,183 @@
-  import { useState } from "react";
-  import { useNavigate, Link } from "react-router-dom";
 
-  function Login() {
-    const navigate = useNavigate();
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+function Login() {
+  const navigate = useNavigate();
 
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-    const handleLogin = async (e) => {
-      e.preventDefault();
+  // Password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
-      setError("");
-      setLoading(true);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-      try {
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-        console.log(
-          "API URL:",
-          import.meta.env.VITE_API_URL
-  );
+    setError("");
+    setLoading(true);
 
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/auth/login`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: email.trim(),
-              password: password,
-            }),
-          }
-        );
+    try {
+      console.log(
+        "API URL:",
+        import.meta.env.VITE_API_URL
+      );
 
-        const data = await response.json();
-
-        console.log("LOGIN RESPONSE:", data);
-
-        if (!response.ok) {
-          throw new Error(
-            data.detail || "Login failed"
-          );
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email.trim(),
+            password: password,
+          }),
         }
+      );
 
-        // Get JWT token
-        const token = data.access_token;
+      const data = await response.json();
 
-        console.log("LOGIN TOKEN:", token);
+      console.log("LOGIN RESPONSE:", data);
 
-        // Make sure backend actually returned a token
-        if (
-          !token ||
-          token === "undefined" ||
-          token === "null"
-        ) {
-          throw new Error(
-            "Login successful, but server did not return a valid access token."
-          );
-        }
-
-        // Save token
-        localStorage.setItem(
-          "access_token",
-          token
+      if (!response.ok) {
+        throw new Error(
+          data.detail || "Login failed"
         );
+      }
 
-        // Save user name
-        localStorage.setItem(
+      // Get JWT token
+      const token = data.access_token;
+
+      console.log("LOGIN TOKEN:", token);
+
+      // Make sure backend actually returned a token
+      if (
+        !token ||
+        token === "undefined" ||
+        token === "null"
+      ) {
+        throw new Error(
+          "Login successful, but server did not return a valid access token."
+        );
+      }
+
+      // Save token
+      localStorage.setItem(
+        "access_token",
+        token
+      );
+
+      // Save user name
+      localStorage.setItem(
         "user_name",
         data.user.name
-        );
+      );
 
-        console.log(
-          "TOKEN SAVED:",
-          localStorage.getItem("access_token")
-        );
+      console.log(
+        "TOKEN SAVED:",
+        localStorage.getItem("access_token")
+      );
 
-        // Go to dashboard
-        navigate("/");
+      // Go to dashboard
+      navigate("/");
 
-      } catch (error) {
-        console.error("LOGIN ERROR:", error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (error) {
+      console.error("LOGIN ERROR:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return (
-      <div className="auth-page">
+  return (
+    <div className="auth-page">
 
-        <div className="auth-card">
+      <div className="auth-card">
 
-          <div className="auth-logo">
-            <div className="logo-icon">
-              L
-            </div>
+        {/* =================================================
+            LOGO
+        ================================================= */}
 
-            <h1>LearnAI</h1>
+        <div className="auth-logo">
+
+          <div className="logo-icon">
+            L
           </div>
 
-          <h2>Welcome back</h2>
+          <h1>
+            LearnAI
+          </h1>
 
-          <p className="auth-subtitle">
-            Login to continue learning.
-          </p>
+        </div>
 
-          {error && (
-            <div className="auth-error">
-              {error}
-            </div>
-          )}
 
-          <form onSubmit={handleLogin}>
+        {/* =================================================
+            TITLE
+        ================================================= */}
 
-            <label>Email</label>
+        <h2>
+          Welcome back
+        </h2>
+
+        <p className="auth-subtitle">
+          Login to continue learning.
+        </p>
+
+
+        {/* =================================================
+            ERROR
+        ================================================= */}
+
+        {error && (
+          <div className="auth-error">
+            {error}
+          </div>
+        )}
+
+
+        {/* =================================================
+            LOGIN FORM
+        ================================================= */}
+
+        <form onSubmit={handleLogin}>
+
+          {/* EMAIL */}
+
+          <label>
+            Email
+          </label>
+
+          <input
+            type="email"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) =>
+              setEmail(e.target.value)
+            }
+            required
+          />
+
+
+          {/* PASSWORD */}
+
+          <label>
+            Password
+          </label>
+
+          <div className="password-input-wrapper">
 
             <input
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
+              type={
+                showPassword
+                  ? "text"
+                  : "password"
               }
-              required
-            />
-
-            <label>Password</label>
-
-            <input
-              type="password"
               placeholder="Enter your password"
               value={password}
               onChange={(e) =>
@@ -142,29 +186,82 @@
               required
             />
 
+            {/* =================================================
+                PROFESSIONAL EYE TOGGLE
+            ================================================= */}
+
             <button
-              type="submit"
-              disabled={loading}
+              type="button"
+              className="password-eye"
+              onClick={() =>
+                setShowPassword(
+                  (previous) => !previous
+                )
+              }
+              aria-label={
+                showPassword
+                  ? "Hide password"
+                  : "Show password"
+              }
+              title={
+                showPassword
+                  ? "Hide password"
+                  : "Show password"
+              }
             >
-              {loading
-                ? "Logging in..."
-                : "Login"}
+
+              {showPassword ? (
+                <EyeOff
+                  size={19}
+                  strokeWidth={1.8}
+                />
+              ) : (
+                <Eye
+                  size={19}
+                  strokeWidth={1.8}
+                />
+              )}
+
             </button>
 
-          </form>
+          </div>
 
-          <p className="auth-footer">
-            Don't have an account?{" "}
 
-            <Link to="/register">
-              Create one
-            </Link>
-          </p>
+          {/* =================================================
+              LOGIN BUTTON
+          ================================================= */}
 
-        </div>
+          <button
+            type="submit"
+            disabled={loading}
+          >
+            {loading
+              ? "Logging in..."
+              : "Login"}
+          </button>
+
+        </form>
+
+
+        {/* =================================================
+            FOOTER
+        ================================================= */}
+
+        <p className="auth-footer">
+
+          Don't have an account?{" "}
+
+          <Link to="/register">
+            Create one
+          </Link>
+
+        </p>
 
       </div>
-    );
-  }
 
-  export default Login;
+    </div>
+  );
+}
+
+export default Login;
+
