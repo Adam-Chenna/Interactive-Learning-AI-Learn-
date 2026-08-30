@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
@@ -9,11 +8,59 @@ function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // Password visibility
   const [showPassword, setShowPassword] = useState(false);
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // =====================================================
+  // HANDLE BACKEND ERROR
+  // =====================================================
+
+  const getErrorMessage = (data) => {
+    if (!data) {
+      return "Login failed";
+    }
+
+    // Normal FastAPI error
+    if (typeof data.detail === "string") {
+      return data.detail;
+    }
+
+    // FastAPI 422 validation error
+    if (Array.isArray(data.detail)) {
+      return data.detail
+        .map((item) => {
+          if (typeof item === "string") {
+            return item;
+          }
+
+          if (item?.msg) {
+            const location = Array.isArray(item.loc)
+              ? item.loc.join(" → ")
+              : "";
+
+            return location
+              ? `${location}: ${item.msg}`
+              : item.msg;
+          }
+
+          return JSON.stringify(item);
+        })
+        .join("\n");
+    }
+
+    // Object error
+    if (typeof data.detail === "object") {
+      return JSON.stringify(data.detail);
+    }
+
+    return "Login failed";
+  };
+
+  // =====================================================
+  // LOGIN
+  // =====================================================
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,87 +69,154 @@ function Login() {
     setLoading(true);
 
     try {
-      console.log(
-        "API URL:",
-        import.meta.env.VITE_API_URL
-      );
+      const apiUrl =
+        import.meta.env.VITE_API_URL;
+
+      console.log("API URL:", apiUrl);
+
+      if (!apiUrl) {
+        throw new Error(
+          "VITE_API_URL is not configured."
+        );
+      }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/auth/login`,
+        `${apiUrl}/api/auth/login`,
         {
           method: "POST",
+
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
+
           body: JSON.stringify({
-            email: email.trim(),
+            email: email.trim().toLowerCase(),
             password: password,
           }),
         }
       );
 
-      const data = await response.json();
+      // =================================================
+      // READ RESPONSE SAFELY
+      // =================================================
 
-      console.log("LOGIN RESPONSE:", data);
+      const text = await response.text();
+
+      let data = {};
+
+      try {
+        data = text
+          ? JSON.parse(text)
+          : {};
+      } catch {
+        data = {
+          detail:
+            text || "Invalid server response",
+        };
+      }
+
+      console.log(
+        "LOGIN STATUS:",
+        response.status
+      );
+
+      console.log(
+        "LOGIN RESPONSE:",
+        data
+      );
+
+      // =================================================
+      // ERROR
+      // =================================================
 
       if (!response.ok) {
         throw new Error(
-          data.detail || "Login failed"
+          getErrorMessage(data)
         );
       }
 
-      // Get JWT token
-      const token = data.access_token;
+      // =================================================
+      // TOKEN
+      // =================================================
 
-      console.log("LOGIN TOKEN:", token);
+      const token =
+        data.access_token;
 
-      // Make sure backend actually returned a token
+      console.log(
+        "LOGIN TOKEN:",
+        token
+      );
+
       if (
         !token ||
         token === "undefined" ||
         token === "null"
       ) {
         throw new Error(
-          "Login successful, but server did not return a valid access token."
+          "Login successful, but server did not return an access token."
         );
       }
 
-      // Save token
+      // =================================================
+      // SAVE TOKEN
+      // =================================================
+
       localStorage.setItem(
         "access_token",
         token
       );
 
-      // Save user name
-      localStorage.setItem(
-        "user_name",
-        data.user.name
-      );
+      // =================================================
+      // SAVE USER NAME
+      // =================================================
+
+      if (data.user?.name) {
+        localStorage.setItem(
+          "user_name",
+          data.user.name
+        );
+      }
 
       console.log(
         "TOKEN SAVED:",
-        localStorage.getItem("access_token")
+        localStorage.getItem(
+          "access_token"
+        )
       );
 
-      // Go to dashboard
+      // =================================================
+      // GO DASHBOARD
+      // =================================================
+
       navigate("/");
 
     } catch (error) {
-      console.error("LOGIN ERROR:", error);
-      setError(error.message);
+      console.error(
+        "LOGIN ERROR:",
+        error
+      );
+
+      setError(
+        error?.message ||
+        "Something went wrong while logging in."
+      );
+
     } finally {
       setLoading(false);
     }
   };
+
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
     <div className="auth-page">
 
       <div className="auth-card">
 
-        {/* =================================================
-            LOGO
-        ================================================= */}
+        {/* LOGO */}
 
         <div className="auth-logo">
 
@@ -117,9 +231,7 @@ function Login() {
         </div>
 
 
-        {/* =================================================
-            TITLE
-        ================================================= */}
+        {/* TITLE */}
 
         <h2>
           Welcome back
@@ -130,9 +242,7 @@ function Login() {
         </p>
 
 
-        {/* =================================================
-            ERROR
-        ================================================= */}
+        {/* ERROR */}
 
         {error && (
           <div className="auth-error">
@@ -141,9 +251,7 @@ function Login() {
         )}
 
 
-        {/* =================================================
-            LOGIN FORM
-        ================================================= */}
+        {/* FORM */}
 
         <form onSubmit={handleLogin}>
 
@@ -161,6 +269,7 @@ function Login() {
               setEmail(e.target.value)
             }
             required
+            disabled={loading}
           />
 
 
@@ -184,18 +293,16 @@ function Login() {
                 setPassword(e.target.value)
               }
               required
+              disabled={loading}
             />
-
-            {/* =================================================
-                PROFESSIONAL EYE TOGGLE
-            ================================================= */}
 
             <button
               type="button"
               className="password-eye"
               onClick={() =>
                 setShowPassword(
-                  (previous) => !previous
+                  (previous) =>
+                    !previous
                 )
               }
               aria-label={
@@ -208,6 +315,7 @@ function Login() {
                   ? "Hide password"
                   : "Show password"
               }
+              disabled={loading}
             >
 
               {showPassword ? (
@@ -227,25 +335,27 @@ function Login() {
           </div>
 
 
-          {/* =================================================
-              LOGIN BUTTON
-          ================================================= */}
+          {/* LOGIN BUTTON */}
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={
+              loading ||
+              !email.trim() ||
+              !password
+            }
           >
+
             {loading
               ? "Logging in..."
               : "Login"}
+
           </button>
 
         </form>
 
 
-        {/* =================================================
-            FOOTER
-        ================================================= */}
+        {/* FOOTER */}
 
         <p className="auth-footer">
 
@@ -264,4 +374,3 @@ function Login() {
 }
 
 export default Login;
-
