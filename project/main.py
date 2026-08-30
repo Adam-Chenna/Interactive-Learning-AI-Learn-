@@ -29,6 +29,8 @@ from models.certificate import Certificate
 
 from routers.certificates import router as certificates_router
 
+from models.ai_chat import AIConversation, AIMessage
+
 app = FastAPI(
     title="LearnAI API",
     description="Backend API for the LearnAI learning platform",
@@ -52,6 +54,7 @@ Base.metadata.create_all(bind=engine)
 
 from seed import seed_courses
 from seed_content import seed_content
+
 
 seed_courses()
 seed_content()
