@@ -105,3 +105,36 @@ def login(
             "email": user.email
         }
     }
+
+@router.post("/token")
+def login_for_swagger(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    email = form_data.username.strip().lower()
+
+    user = db.query(User).filter(
+        User.email == email
+    ).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+
+    if not verify_password(
+        form_data.password,
+        user.password
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+
+    token = create_access_token(user.id)
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }

@@ -81,21 +81,20 @@ function Login() {
       }
 
       const response = await fetch(
-        `${apiUrl}/api/auth/login`,
-        {
-          method: "POST",
+  `${import.meta.env.VITE_API_URL}/api/auth/login`,
+  {
+    method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
 
-          body: JSON.stringify({
-            email: email.trim().toLowerCase(),
-            password: password,
-          }),
-        }
-      );
+    body: new URLSearchParams({
+      username: email.trim(),
+      password: password,
+    }),
+  }
+);
 
       // =================================================
       // READ RESPONSE SAFELY

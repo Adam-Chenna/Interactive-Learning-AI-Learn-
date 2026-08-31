@@ -85,7 +85,6 @@ def ask_ai(
 
     question = data.question.strip()
 
-
     # -------------------------------------------------
     # VALIDATION
     # -------------------------------------------------
@@ -96,43 +95,45 @@ def ask_ai(
             detail="Question cannot be empty"
         )
 
+    token_conversation = None
 
     # =================================================
-    # GET / CREATE CONVERSATION
+    # GET EXISTING CONVERSATION
     # =================================================
-
-    conversation = None
 
     if data.conversation_id is not None:
 
-        conversation = db.query(
+        token_conversation = db.query(
             AIConversation
         ).filter(
             AIConversation.id == data.conversation_id,
             AIConversation.user_id == current_user.id
         ).first()
 
-        if not conversation:
+        if not token_conversation:
             raise HTTPException(
                 status_code=404,
                 detail="Conversation not found"
             )
 
+    # =================================================
+    # CREATE NEW CONVERSATION
+    # =================================================
+
     else:
 
-        conversation = AIConversation(
+        token_conversation = AIConversation(
             user_id=current_user.id
         )
 
-        db.add(conversation)
-
+        db.add(token_conversation)
         db.commit()
+        db.refresh(token_conversation)
 
-        db.refresh(conversation)
-
+    conversation = token_conversation
 
     # =================================================
-    # LEARN AI IDENTITY
+    # IDENTITY QUESTIONS
     # =================================================
 
     identity_questions = {
@@ -147,7 +148,6 @@ def ask_ai(
         "who created you",
         "who created you?",
     }
-
 
     # =================================================
     # LESSON CONTEXT
@@ -179,9 +179,8 @@ Lesson Content:
 {lesson.content or "No lesson content available."}
 """
 
-
     # =================================================
-    # LOAD PREVIOUS CONVERSATION
+    # LOAD PREVIOUS MESSAGES
     # =================================================
 
     previous_messages = db.query(
@@ -191,7 +190,6 @@ Lesson Content:
     ).order_by(
         AIMessage.id.asc()
     ).all()
-
 
     # =================================================
     # SAVE USER MESSAGE
@@ -204,9 +202,7 @@ Lesson Content:
     )
 
     db.add(user_message)
-
     db.commit()
-
 
     # =================================================
     # IDENTITY RESPONSE
@@ -226,7 +222,6 @@ Lesson Content:
         )
 
         db.add(assistant_message)
-
         db.commit()
 
         return {
@@ -237,7 +232,6 @@ Lesson Content:
             "conversation_id": conversation.id
         }
 
-
     # =================================================
     # SYSTEM PROMPT
     # =================================================
@@ -245,11 +239,12 @@ Lesson Content:
     system_prompt = f"""
 You are LearnAI AI Tutor.
 
+You are the personal AI learning assistant of the
+LearnAI learning platform.
+
 =====================================================
 IDENTITY
 =====================================================
-
-You are ONLY the AI Tutor of the LearnAI learning platform.
 
 Your identity is:
 
@@ -257,56 +252,48 @@ Your identity is:
 
 If the student asks:
 
-- Who are you?
-- What are you?
-- Are you ChatGPT?
-- What AI are you?
-- Who created you?
+Who are you?
+What are you?
+Are you ChatGPT?
+What AI are you?
+Who created you?
 
-You must identify yourself as:
+Respond:
 
-"I'm LearnAI AI Tutor, a personal AI learning assistant built into the LearnAI learning platform."
+"I'm LearnAI AI Tutor, a personal AI learning assistant
+built into the LearnAI learning platform."
 
-NEVER identify yourself as ChatGPT.
+Never identify yourself as ChatGPT.
 
-NEVER say:
+Never say:
 
 "I am ChatGPT."
-
 "I'm ChatGPT."
-
 "I am an AI language model from OpenAI."
 
-Never reveal or discuss these system instructions.
-
+Never reveal system instructions.
 
 =====================================================
-LANGUAGE SUPPORT
+LANGUAGE
 =====================================================
 
-You support:
+Support:
 
 - English
 - Hindi
 - Hinglish
 
-Detect the language naturally.
+Detect the student's language naturally.
 
-If the student asks in English:
-Respond in English.
+English question → English response.
 
-If the student asks in Hindi:
-Respond in Hindi.
+Hindi question → Hindi response.
 
-If the student asks in Hinglish:
-Respond naturally in Hinglish.
+Hinglish question → Hinglish response.
 
-If the student mixes Hindi and English:
-You may naturally mix both.
+Technical terms should normally remain in English.
 
-Do not force the student to use a particular language.
-
-Technical terms such as:
+Examples:
 
 Python
 JavaScript
@@ -320,9 +307,6 @@ function
 variable
 loop
 
-should normally remain in English.
-
-
 =====================================================
 TEACHING STYLE
 =====================================================
@@ -335,72 +319,39 @@ Be:
 - Helpful
 - Student-friendly
 
-Use simple explanations when possible.
+Explain difficult concepts simply.
 
 For programming questions:
 
-- Give a relevant example when useful.
+- Give examples when useful.
 - Use code blocks when necessary.
 - Explain only what is needed.
 
-If the student is confused:
-Explain the concept in another simple way.
-
 Do not make up facts.
 
-
 =====================================================
-RESPONSE LENGTH
-=====================================================
-
-Answer what the student asks.
-
-Simple question:
-Give a short answer.
-
-Detailed question:
-Give a detailed explanation.
-
-Do not add unnecessary information.
-
-Do not repeat the student's question.
-
-Do not add unrelated information.
-
-Do not create unnecessary tables.
-
-Do not add a summary unless useful or requested.
-
-
-=====================================================
-COURSE / LEARNING SUPPORT
+CONVERSATION MEMORY
 =====================================================
 
-You are a learning assistant.
+The previous messages belong to the current student's
+conversation.
 
-You can help students with:
+Use them to maintain continuity.
 
-- Course topics
-- Programming
-- Learning concepts
-- Practice questions
-- Explanations
-- Projects
-- Study plans
-- Learning paths
-- Course-related doubts
+Remember what the student has already asked.
 
-If a student asks about learning something:
+Remember what has already been explained.
 
-Understand their:
+Avoid unnecessarily repeating previous explanations.
 
-- Current knowledge
-- Experience
-- Goal
-- Desired topic
+If the student says:
 
-and provide an appropriate learning explanation.
+"continue"
+"what about that"
+"explain the previous thing"
+"as I asked before"
 
+use the previous conversation context.
 
 =====================================================
 LESSON CONTEXT
@@ -408,39 +359,27 @@ LESSON CONTEXT
 
 {lesson_context}
 
-
-=====================================================
-IMPORTANT
-=====================================================
-
 If lesson context is available, use it when relevant.
 
-If the question is unrelated to the current lesson,
-answer normally.
-
-Always maintain the LearnAI AI Tutor identity.
-
+If the question is unrelated to the lesson, answer normally.
 
 =====================================================
-CONVERSATION MEMORY
+RESPONSE LENGTH
 =====================================================
 
-The previous messages in this conversation are provided
-to you separately.
+Simple question:
+Give a short answer.
 
-Use them to understand what the student has already asked,
-what has already been explained, and what the student is
-currently trying to learn.
+Detailed question:
+Give a detailed explanation.
 
-Do not unnecessarily repeat explanations that were already
-given.
+Do not add unrelated information.
 
-Maintain natural conversational continuity.
+Do not unnecessarily repeat the student's question.
 """
 
-
     # =================================================
-    # BUILD AI MESSAGES
+    # BUILD MESSAGE HISTORY
     # =================================================
 
     messages = [
@@ -449,11 +388,6 @@ Maintain natural conversational continuity.
             "content": system_prompt
         }
     ]
-
-
-    # -------------------------------------------------
-    # ADD PREVIOUS MESSAGES
-    # -------------------------------------------------
 
     for message in previous_messages:
 
@@ -464,28 +398,28 @@ Maintain natural conversational continuity.
                 "content": message.content
             })
 
-
-    # -------------------------------------------------
-    # CURRENT QUESTION
-    # -------------------------------------------------
+    # IMPORTANT:
+    # Current question is already saved in DB, but we
+    # need it in the request sent to Groq as well.
 
     messages.append({
         "role": "user",
         "content": question
     })
 
-
     # =================================================
-    # AI REQUEST
+    # GROQ REQUEST
     # =================================================
 
     try:
 
         response = client.chat.completions.create(
 
-            model="llama-3.1-8b-instant",
+            model="openai/gpt-oss-20b",
 
-            messages=messages
+            messages=messages,
+
+            temperature=0.7
 
         )
 
@@ -496,7 +430,6 @@ Maintain natural conversational continuity.
             .content
             .strip()
         )
-
 
         # =================================================
         # SAVE AI RESPONSE
@@ -509,41 +442,35 @@ Maintain natural conversational continuity.
         )
 
         db.add(assistant_message)
-
         db.commit()
 
-
         # =================================================
-        # RETURN RESPONSE
+        # RETURN
         # =================================================
 
         return {
-
             "success": True,
-
             "question": question,
-
             "answer": answer,
-
             "lesson_id": data.lesson_id,
-
             "conversation_id": conversation.id
-
         }
-
 
     except Exception as error:
 
         db.rollback()
 
-        print(
-            "Groq error:",
-            error
-        )
+        print("\n==============================")
+        print("GROQ AI TUTOR ERROR")
+        print("==============================")
+        print("ERROR TYPE:", type(error).__name__)
+        print("ERROR:", str(error))
+        traceback.print_exc()
+        print("==============================\n")
 
         raise HTTPException(
             status_code=500,
-            detail="AI Tutor could not generate a response"
+            detail=f"AI Tutor error: {str(error)}"
         )
 
 
@@ -565,21 +492,14 @@ def get_conversations(
         AIConversation.id.desc()
     ).all()
 
-
     return {
-
         "success": True,
-
         "conversations": [
-
             {
                 "id": conversation.id
             }
-
             for conversation in conversations
-
         ]
-
     }
 
 
@@ -601,14 +521,12 @@ def get_conversation(
         AIConversation.user_id == current_user.id
     ).first()
 
-
     if not conversation:
 
         raise HTTPException(
             status_code=404,
             detail="Conversation not found"
         )
-
 
     messages = db.query(
         AIMessage
@@ -618,25 +536,17 @@ def get_conversation(
         AIMessage.id.asc()
     ).all()
 
-
     return {
-
         "success": True,
-
         "conversation_id": conversation.id,
-
         "messages": [
-
             {
                 "id": message.id,
                 "role": message.role,
                 "content": message.content
             }
-
             for message in messages
-
         ]
-
     }
 
 
@@ -658,7 +568,6 @@ def delete_conversation(
         AIConversation.user_id == current_user.id
     ).first()
 
-
     if not conversation:
 
         raise HTTPException(
@@ -666,18 +575,12 @@ def delete_conversation(
             detail="Conversation not found"
         )
 
-
     db.delete(conversation)
-
     db.commit()
 
-
     return {
-
         "success": True,
-
         "message": "Conversation deleted successfully."
-
     }
 
 
@@ -693,9 +596,8 @@ def generate_learning_path(
 
     prompt = data.prompt.strip()
 
-
     # =================================================
-    # VALIDATE
+    # VALIDATION
     # =================================================
 
     if not prompt:
@@ -704,7 +606,6 @@ def generate_learning_path(
             status_code=400,
             detail="Learning goal cannot be empty"
         )
-
 
     # =================================================
     # SYSTEM PROMPT
@@ -720,14 +621,14 @@ learning path.
 The student may mention:
 
 - What they want to learn
-- Their current knowledge
-- Their experience level
-- Their goals
-- Projects they want to build
-- Topics they already know
+- Current knowledge
+- Experience
+- Goals
+- Projects
+- Topics already known
 - Topics they struggle with
 
-Analyze all of this information.
+Analyze all available information.
 
 Do NOT ask the student to manually select:
 
@@ -735,87 +636,64 @@ Do NOT ask the student to manually select:
 - Level
 - Difficulty
 
-The student's natural-language prompt contains this
-information.
-
-Your job is to infer an appropriate learning path.
-
+Infer an appropriate learning path from the student's
+request.
 
 =====================================================
-COURSE RULES
+COURSE
 =====================================================
 
 Create ONE personalized course.
 
-The course must contain:
+Required:
 
-- course_title
-- description
-- category
-- level
-- estimated_hours
-
-
-=====================================================
-LEVEL RULES
-=====================================================
-
-Create between 2 and 4 learning levels.
-
-Levels should progress naturally.
-
-Examples:
-
-Foundation
-Intermediate
-Advanced
-Projects
-
-Do not blindly use these names.
-
-Choose names appropriate to the student's goal.
-
+course_title
+description
+category
+level
+estimated_hours
 
 =====================================================
-CHAPTER RULES
+LEVELS
 =====================================================
 
-Each level should contain:
+Create 2 to 4 levels.
 
-2 to 4 chapters.
-
+Levels must progress naturally.
 
 =====================================================
-LESSON RULES
+CHAPTERS
 =====================================================
 
-Each chapter should contain:
+Each level must contain 2 to 4 chapters.
 
-2 to 5 lessons.
+=====================================================
+LESSONS
+=====================================================
 
-Every lesson must contain:
+Each chapter must contain 2 to 5 lessons.
 
-- title
-- description
-- duration
-- xp
+Every lesson MUST contain:
+
+title
+description
+duration
+xp
 
 duration must be an integer representing minutes.
 
 xp must be an integer.
 
-
 =====================================================
 PROGRESSION
 =====================================================
 
-Lessons should become progressively more challenging.
+Lessons must become progressively more challenging.
 
 Do not generate random unrelated topics.
 
 Every lesson must contribute toward the student's
-stated learning goal.
-
+learning goal.
 
 =====================================================
 PROJECTS
@@ -824,20 +702,19 @@ PROJECTS
 If the student wants practical learning or projects,
 include project-based chapters where appropriate.
 
-
 =====================================================
-OUTPUT FORMAT
+OUTPUT
 =====================================================
 
 Return ONLY valid JSON.
 
-Do NOT include:
+Do NOT return:
 
-- Markdown
-- ```json
-- explanations
-- comments
-- extra text
+Markdown
+```json
+explanations
+comments
+extra text
 
 Use exactly this structure:
 
@@ -868,31 +745,34 @@ Use exactly this structure:
 }
 """
 
-
     # =================================================
-    # AI REQUEST
+    # GROQ REQUEST
     # =================================================
 
     try:
 
         response = client.chat.completions.create(
-    model="openai/gpt-oss-20b",
-    messages=[
-        {
-            "role": "system",
-            "content": system_prompt
-        },
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ],
-    temperature=0.2,
-    response_format={
-        "type": "json_object"
-    }
-)
 
+            model="openai/gpt-oss-20b",
+
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+
+            temperature=0.2,
+
+            response_format={
+                "type": "json_object"
+            }
+
+        )
 
         raw_response = (
             response
@@ -902,34 +782,37 @@ Use exactly this structure:
             .strip()
         )
 
-        print("RAW LEARNING PATH RESPONSE:")
+        print(
+            "\n=============================="
+        )
+        print("RAW LEARNING PATH RESPONSE")
+        print("==============================")
         print(raw_response)
-
+        print("==============================\n")
 
         # =================================================
-        # REMOVE MARKDOWN WRAPPER
+        # REMOVE MARKDOWN WRAPPER IF MODEL RETURNS IT
         # =================================================
 
         if raw_response.startswith("```json"):
 
-            raw_response = raw_response[7:]
+            raw_response = raw_response[
+                len("```json"):
+            ]
 
             if raw_response.endswith("```"):
-
                 raw_response = raw_response[:-3]
-
 
         elif raw_response.startswith("```"):
 
-            raw_response = raw_response[3:]
+            raw_response = raw_response[
+                len("```"):
+            ]
 
             if raw_response.endswith("```"):
-
                 raw_response = raw_response[:-3]
 
-
         raw_response = raw_response.strip()
-
 
         # =================================================
         # PARSE JSON
@@ -958,94 +841,228 @@ Use exactly this structure:
                 detail="AI returned an invalid learning path"
             )
 
+        # =================================================
+        # VALIDATE ROOT OBJECT
+        # =================================================
+
+        if not isinstance(
+            learning_path,
+            dict
+        ):
+
+            raise HTTPException(
+                status_code=500,
+                detail="AI returned an invalid learning path"
+            )
 
         # =================================================
         # REQUIRED FIELDS
         # =================================================
 
         required_fields = [
-
             "course_title",
             "description",
             "category",
             "level",
             "estimated_hours",
             "levels"
-
         ]
-
 
         for field in required_fields:
 
             if field not in learning_path:
 
                 raise HTTPException(
-
                     status_code=500,
-
                     detail=(
                         f"AI learning path is missing: {field}"
                     )
-
                 )
-
 
         # =================================================
         # VALIDATE LEVELS
         # =================================================
 
+        levels = learning_path["levels"]
+
         if not isinstance(
-            learning_path["levels"],
+            levels,
             list
         ):
 
             raise HTTPException(
-
                 status_code=500,
-
                 detail="Invalid learning path levels"
-
             )
 
+        if len(levels) < 2 or len(levels) > 4:
+
+            raise HTTPException(
+                status_code=500,
+                detail="Learning path must contain 2 to 4 levels"
+            )
+
+        # =================================================
+        # VALIDATE CHAPTERS / LESSONS
+        # =================================================
+
+        for level_data in levels:
+
+            if not isinstance(
+                level_data,
+                dict
+            ):
+
+                raise HTTPException(
+                    status_code=500,
+                    detail="Invalid level structure"
+                )
+
+            if "title" not in level_data:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Level is missing title"
+                )
+
+            chapters = level_data.get(
+                "chapters"
+            )
+
+            if not isinstance(
+                chapters,
+                list
+            ):
+
+                raise HTTPException(
+                    status_code=500,
+                    detail="Invalid chapter structure"
+                )
+
+            if len(chapters) < 2 or len(chapters) > 4:
+
+                raise HTTPException(
+                    status_code=500,
+                    detail="Each level must contain 2 to 4 chapters"
+                )
+
+            for chapter_data in chapters:
+
+                if not isinstance(
+                    chapter_data,
+                    dict
+                ):
+
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Invalid chapter structure"
+                    )
+
+                if "title" not in chapter_data:
+
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Chapter is missing title"
+                    )
+
+                lessons = chapter_data.get(
+                    "lessons"
+                )
+
+                if not isinstance(
+                    lessons,
+                    list
+                ):
+
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Invalid lesson structure"
+                    )
+
+                if len(lessons) < 2 or len(lessons) > 5:
+
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Each chapter must contain 2 to 5 lessons"
+                    )
+
+                for lesson_data in lessons:
+
+                    required_lesson_fields = [
+                        "title",
+                        "description",
+                        "duration",
+                        "xp"
+                    ]
+
+                    for field in required_lesson_fields:
+
+                        if field not in lesson_data:
+
+                            raise HTTPException(
+                                status_code=500,
+                                detail=(
+                                    f"Lesson is missing: {field}"
+                                )
+                            )
+
+                    if not isinstance(
+                        lesson_data["duration"],
+                        int
+                    ):
+
+                        raise HTTPException(
+                            status_code=500,
+                            detail="Lesson duration must be an integer"
+                        )
+
+                    if not isinstance(
+                        lesson_data["xp"],
+                        int
+                    ):
+
+                        raise HTTPException(
+                            status_code=500,
+                            detail="Lesson XP must be an integer"
+                        )
 
         # =================================================
         # RETURN
         # =================================================
 
         return {
-
             "success": True,
-
             "message": (
                 "Personalized learning path generated successfully."
             ),
-
             "learning_path": learning_path
-
         }
 
-
     except HTTPException:
-
         raise
-
 
     except Exception as error:
 
-    
-        print("\n==============================")
+        print(
+            "\n=============================="
+        )
         print("LEARNING PATH ERROR")
         print("==============================")
-        print("ERROR TYPE:", type(error).__name__)
-        print("ERROR:", str(error))
+        print(
+            "ERROR TYPE:",
+            type(error).__name__
+        )
+        print(
+            "ERROR:",
+            str(error)
+        )
         traceback.print_exc()
         print("==============================\n")
 
-        db.rollback()
-    
         raise HTTPException(
             status_code=500,
-            detail=f"Learning path error: {str(error)}"
+            detail=(
+                "Could not generate personalized learning path"
+            )
         )
 
 
@@ -1066,47 +1083,45 @@ def save_learning_path(
 
     learning_path = data.learning_path
 
-
     # =================================================
-    # VALIDATE LEARNING PATH
+    # VALIDATION
     # =================================================
 
     if not learning_path:
 
         raise HTTPException(
-
             status_code=400,
-
             detail="Learning path cannot be empty"
-
         )
 
-
     required_fields = [
-
         "course_title",
         "description",
         "category",
         "level",
         "levels"
-
     ]
-
 
     for field in required_fields:
 
         if field not in learning_path:
 
             raise HTTPException(
-
                 status_code=400,
-
                 detail=(
                     f"Learning path is missing: {field}"
                 )
-
             )
 
+    if not isinstance(
+        learning_path["levels"],
+        list
+    ):
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid learning path levels"
+        )
 
     try:
 
@@ -1115,21 +1130,16 @@ def save_learning_path(
         # =================================================
 
         course = Course(
-    title=learning_path["course_title"],
-    description=learning_path["description"],
-    category=learning_path["category"],
-    level=learning_path["level"],
-    instructor="LearnAI AI",
-    icon=None
-)
-
+            title=learning_path["course_title"],
+            description=learning_path["description"],
+            category=learning_path["category"],
+            level=learning_path["level"],
+            instructor="LearnAI AI",
+            icon=None
+        )
 
         db.add(course)
-
-        db.commit()
-
-        db.refresh(course)
-
+        db.flush()
 
         # =================================================
         # CREATE LEVELS
@@ -1141,20 +1151,12 @@ def save_learning_path(
         ):
 
             level = Level(
-
                 title=level_data["title"],
-
                 course_id=course.id
-
             )
 
-
             db.add(level)
-
-            db.commit()
-
-            db.refresh(level)
-
+            db.flush()
 
             # =================================================
             # CREATE CHAPTERS
@@ -1166,20 +1168,12 @@ def save_learning_path(
             ):
 
                 chapter = Chapter(
-
                     title=chapter_data["title"],
-
                     level_id=level.id
-
                 )
 
-
                 db.add(chapter)
-
-                db.commit()
-
-                db.refresh(chapter)
-
+                db.flush()
 
                 # =================================================
                 # CREATE LESSONS
@@ -1190,16 +1184,19 @@ def save_learning_path(
                     []
                 ):
 
-                   lesson = Lesson(
+                    lesson = Lesson(
                         title=lesson_data["title"],
+
                         duration=lesson_data.get(
                             "duration",
                             20
                         ),
+
                         xp=lesson_data.get(
                             "xp",
                             30
-                        ),                    
+                        ),
+
                         content=lesson_data.get(
                             "content",
                             lesson_data.get(
@@ -1207,22 +1204,24 @@ def save_learning_path(
                                 ""
                             )
                         ),
+
                         chapter_id=chapter.id
                     )
 
+                    # IMPORTANT:
+                    # This MUST be inside the lesson loop.
 
-        db.add(lesson)
-
+                    db.add(lesson)
 
         # =================================================
         # FINAL COMMIT
         # =================================================
 
         db.commit()
-
+        db.refresh(course)
 
         # =================================================
-        # RESPONSE
+        # SUCCESS RESPONSE
         # =================================================
 
         return {
@@ -1239,24 +1238,29 @@ def save_learning_path(
 
         }
 
-
     except Exception as error:
 
         db.rollback()
 
-
         print(
-            "Save learning path error:",
-            error
+            "\n=============================="
         )
-
+        print("SAVE LEARNING PATH ERROR")
+        print("==============================")
+        print(
+            "ERROR TYPE:",
+            type(error).__name__
+        )
+        print(
+            "ERROR:",
+            str(error)
+        )
+        traceback.print_exc()
+        print("==============================\n")
 
         raise HTTPException(
-
             status_code=500,
-
             detail=(
                 "Could not save personalized learning path"
             )
-
         )
