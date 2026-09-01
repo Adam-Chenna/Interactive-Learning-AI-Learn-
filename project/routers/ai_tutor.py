@@ -497,24 +497,28 @@ def generate_learning_path(
     system_prompt = """
 You are the LearnAI Personalized Learning Path Generator.
 
-Your task is to create ONE complete, personalized, dynamically generated
-online course based on the student's exact learning request.
+Create ONE complete, personalized, dynamically generated online course
+based specifically on the student's exact request.
 
-IMPORTANT:
-The course must be specifically adapted to the student's requested topic.
-Do not use a fixed generic curriculum.
+Analyze the student's:
+- learning goal
+- requested topic
+- current knowledge if mentioned
+- desired outcome
+- practical requirements
+- theory requirements
+- project requirements
+- interview or career requirements if mentioned
 
-Analyze:
-- what the student wants to learn
-- their current knowledge if mentioned
-- their goal
-- whether they want theory, projects, interview preparation, practical skills,
-  or a combination
-- appropriate difficulty
+Do NOT use a fixed generic curriculum.
 
-Choose the course structure dynamically.
+The course structure must adapt to the actual topic.
 
-The top-level course object MUST contain:
+==================================================
+TOP-LEVEL COURSE STRUCTURE
+==================================================
+
+The response MUST contain:
 
 course_title
 description
@@ -523,25 +527,47 @@ level
 estimated_hours
 levels
 
-The level field must be exactly one of:
+The "level" field must be exactly one of:
 
 Beginner
 Intermediate
 Advanced
 
-COURSE STRUCTURE:
+==================================================
+DYNAMIC COURSE STRUCTURE
+==================================================
 
-Create 2 to 3 levels.
+Choose the number of levels, chapters and lessons intelligently.
 
-Each level must contain 2 to 3 chapters.
+Levels:
+- Minimum: 1
+- Maximum: 4
 
-Each chapter must contain 2 to 4 lessons.
+Use:
+- 1 level for small/simple topics
+- 2 levels for medium topics
+- 3 levels for broad topics
+- 4 levels for advanced or very broad learning goals
 
-Do not create unnecessary levels, chapters, or lessons just to increase length.
+Chapters:
+- Minimum: 1 chapter per level
+- Maximum: 5 chapters per level
 
-The curriculum must progress logically according to the requested subject.
+Lessons:
+- Minimum: 1 lesson per chapter
+- Maximum: 6 lessons per chapter
 
-For example, when appropriate:
+Do NOT create unnecessary levels, chapters or lessons just to increase length.
+
+The structure must depend on the student's actual request.
+
+==================================================
+CURRICULUM PROGRESSION
+==================================================
+
+Create a logical learning progression.
+
+When appropriate, progress through:
 
 Foundations
 → Core Concepts
@@ -549,9 +575,20 @@ Foundations
 → Advanced Concepts
 → Real-world Projects
 
-But do NOT force this exact sequence when it does not make sense for the requested topic.
+However, do NOT force this sequence when it does not fit the requested subject.
 
-LESSON FIELDS:
+Avoid:
+- duplicate chapters
+- duplicate lessons
+- unrelated topics
+- vague lesson titles
+- filler content
+
+Every chapter and lesson must have a clear educational purpose.
+
+==================================================
+LESSON FIELDS
+==================================================
 
 Every lesson MUST contain:
 
@@ -565,122 +602,151 @@ duration must be an integer number of minutes.
 
 xp must be an integer.
 
-LESSON CONTENT:
+==================================================
+LESSON CONTENT
+==================================================
 
-Every lesson must contain useful, informative teaching material.
+Every lesson must contain meaningful educational content.
 
-The content must dynamically match the lesson topic.
+The student should actually be able to learn the topic from the lesson.
 
 For EVERY lesson include:
 
 1. Clear concept explanation
-2. Why the concept is important
-3. How it works
-4. A practical or real-world example
-5. A subject-specific example
-6. Programming/code example when the subject involves programming
-7. Step-by-step explanation of the example when appropriate
-8. One common beginner mistake
-9. A short takeaway
+2. Why the concept matters
+3. How the concept works
+4. Practical explanation
+5. Relevant real-world example
+6. Subject-specific example
+7. Programming/code example when the subject involves programming
+8. Step-by-step explanation of the example when appropriate
+9. One common beginner mistake
+10. Short takeaway
 
-The examples MUST be related to the actual lesson.
+Examples MUST be directly related to the actual lesson topic.
 
-Do not use generic examples that could apply to any subject.
+Do NOT use generic examples repeatedly across lessons.
 
-For programming topics:
-- explain the concept
-- provide a realistic code example
-- explain what the code does
-- explain important parts of the code
-- mention a common mistake
+==================================================
+PROGRAMMING LESSONS
+==================================================
 
-For non-programming topics:
-- use realistic scenarios
-- use practical examples
-- explain how the concept is applied
+If the requested subject involves programming:
 
-CONTENT LENGTH:
+- Explain the programming concept clearly.
+- Include realistic code examples.
+- Explain what the code does.
+- Explain important parts of the code.
+- Explain expected behavior/output when useful.
+- Mention one common programming mistake.
+- Keep examples appropriate to the student's level.
 
-Each lesson content should normally be around 250 to 450 words.
+For example, if the topic is Python file handling,
+use a file-handling example.
 
-Do NOT make content extremely short.
+If the topic is React state,
+use a React state example.
 
-Do NOT generate huge essays.
+Do NOT use unrelated programming examples.
 
-Prioritize useful educational information over filler.
+==================================================
+NON-PROGRAMMING LESSONS
+==================================================
 
-The student should be able to actually learn the concept from the lesson content.
+For non-programming subjects:
 
-DYNAMIC CURRICULUM:
+- Explain the concept clearly.
+- Use practical scenarios.
+- Give realistic examples.
+- Explain how the concept is applied in real situations.
 
-The course must be generated specifically from the user's prompt.
+==================================================
+CONTENT LENGTH
+==================================================
+
+Every lesson should normally contain approximately
+250 to 450 words.
+
+The content should be informative and detailed enough
+to feel like a real online course lesson.
+
+Do NOT create extremely short lessons.
+
+Do NOT create huge essays.
+
+Prioritize educational value over filler.
+
+==================================================
+DIFFICULTY
+==================================================
+
+Determine difficulty from the student's request.
+
+If the student says they are a beginner:
+- start from fundamentals
+- explain terminology clearly
+- avoid unnecessary advanced concepts
+
+If the student already knows fundamentals:
+- skip unnecessary beginner material
+- move toward intermediate concepts
+
+If the student requests advanced material:
+- provide advanced concepts
+- include practical and real-world applications
+
+==================================================
+PERSONALIZATION
+==================================================
+
+Adapt the course to the exact student request.
 
 For example:
 
-If the user asks:
+If the student asks:
 "I want to learn Python for automation"
 
-focus on:
-Python fundamentals
-file handling
-automation libraries
-scripts
-APIs
-automation projects
+focus on relevant topics such as:
+- Python fundamentals needed for automation
+- file handling
+- APIs
+- automation libraries
+- scripts
+- practical automation projects
 
-If the user asks:
+If the student asks:
 "I want to learn React for frontend development"
 
-focus on:
-components
-JSX
-props
-state
-hooks
-events
-routing
-API integration
-projects
+focus on relevant topics such as:
+- components
+- JSX
+- props
+- state
+- hooks
+- events
+- routing
+- API integration
+- projects
 
-If the user asks:
+If the student asks:
 "I want to learn machine learning"
 
-focus on:
-data preparation
-features
-models
-training
-evaluation
-practical ML workflows
-projects
+focus on relevant topics such as:
+- data preparation
+- features
+- models
+- training
+- evaluation
+- practical ML workflows
+- projects
 
-Do NOT blindly use these examples.
-Generate the curriculum according to the actual user request.
+These examples are only guidance.
 
-AVOID:
-- duplicate lessons
-- duplicate chapters
-- vague lesson titles
-- unrelated topics
-- filler content
-- repeated explanations
-- meaningless examples
-- extremely short content
+Always generate the curriculum based on the ACTUAL student request.
 
-Make every lesson meaningfully different.
-
-DIFFICULTY:
-
-Automatically determine the appropriate course difficulty from the student's request.
-
-If the user says they are a beginner, create beginner-friendly content.
-
-If the user already knows fundamentals, skip unnecessary beginner material
-and move toward intermediate concepts.
-
-If the user requests advanced topics, make the curriculum advanced.
-
-OUTPUT:
+==================================================
+OUTPUT FORMAT
+==================================================
 
 Return ONLY valid JSON.
 
@@ -724,6 +790,7 @@ Use exactly this structure:
 
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
+
             messages=[
                 {
                     "role": "system",
@@ -737,7 +804,9 @@ Use exactly this structure:
                     )
                 }
             ],
+
             temperature=0.4,
+
             response_format={
                 "type": "json_object"
             }
@@ -749,9 +818,9 @@ Use exactly this structure:
             .strip()
         )
 
-        # -------------------------------------------------
-        # CLEAN POSSIBLE MARKDOWN WRAPPER
-        # -------------------------------------------------
+        # ==================================================
+        # CLEAN RESPONSE
+        # ==================================================
 
         if raw_response.startswith("```json"):
             raw_response = raw_response[7:]
@@ -764,19 +833,19 @@ Use exactly this structure:
 
         raw_response = raw_response.strip()
 
-        # -------------------------------------------------
+        # ==================================================
         # PARSE JSON
-        # -------------------------------------------------
+        # ==================================================
 
         try:
 
             learning_path = json.loads(raw_response)
 
-        except json.JSONDecodeError as json_error:
+        except json.JSONDecodeError as error:
 
             print(
                 "LEARNING PATH JSON ERROR:",
-                str(json_error)
+                str(error)
             )
 
             print(
@@ -789,11 +858,12 @@ Use exactly this structure:
                 detail="AI returned invalid course data"
             )
 
-        # -------------------------------------------------
+        # ==================================================
         # BASIC VALIDATION
-        # -------------------------------------------------
+        # ==================================================
 
         if not isinstance(learning_path, dict):
+
             raise HTTPException(
                 status_code=500,
                 detail="AI returned invalid course structure"
@@ -811,56 +881,63 @@ Use exactly this structure:
         for field in required_fields:
 
             if field not in learning_path:
+
                 raise HTTPException(
                     status_code=500,
                     detail=f"AI course is missing: {field}"
                 )
 
-        # -------------------------------------------------
+        # ==================================================
         # COURSE LEVEL
-        # -------------------------------------------------
+        # ==================================================
 
         if learning_path["level"] not in [
             "Beginner",
             "Intermediate",
             "Advanced"
         ]:
+
             raise HTTPException(
                 status_code=500,
                 detail="AI returned an invalid course level"
             )
 
-        # -------------------------------------------------
-        # LEVEL VALIDATION
-        # -------------------------------------------------
+        # ==================================================
+        # LEVELS
+        # ==================================================
 
         levels = learning_path["levels"]
 
         if not isinstance(levels, list):
+
             raise HTTPException(
                 status_code=500,
                 detail="AI returned invalid levels"
             )
 
-        if len(levels) < 2 or len(levels) > 3:
+        # Dynamic: 1–4 levels
+        if len(levels) < 1 or len(levels) > 4:
+
             raise HTTPException(
                 status_code=500,
                 detail="AI returned an invalid number of levels"
             )
 
-        # -------------------------------------------------
-        # CHAPTER + LESSON VALIDATION
-        # -------------------------------------------------
+        # ==================================================
+        # LEVEL VALIDATION
+        # ==================================================
 
-        for level_data in levels:
+        for level_index, level_data in enumerate(levels):
 
             if not isinstance(level_data, dict):
+
                 raise HTTPException(
                     status_code=500,
                     detail="AI returned an invalid level"
                 )
 
             if not level_data.get("title"):
+
                 raise HTTPException(
                     status_code=500,
                     detail="AI returned a level without a title"
@@ -869,26 +946,35 @@ Use exactly this structure:
             chapters = level_data.get("chapters")
 
             if not isinstance(chapters, list):
+
                 raise HTTPException(
                     status_code=500,
                     detail="AI returned invalid chapters"
                 )
 
-            if len(chapters) < 2 or len(chapters) > 3:
+            # Dynamic: 1–5 chapters
+            if len(chapters) < 1 or len(chapters) > 5:
+
                 raise HTTPException(
                     status_code=500,
                     detail="AI returned an invalid number of chapters"
                 )
 
-            for chapter_data in chapters:
+            # ==================================================
+            # CHAPTER VALIDATION
+            # ==================================================
+
+            for chapter_index, chapter_data in enumerate(chapters):
 
                 if not isinstance(chapter_data, dict):
+
                     raise HTTPException(
                         status_code=500,
                         detail="AI returned an invalid chapter"
                     )
 
                 if not chapter_data.get("title"):
+
                     raise HTTPException(
                         status_code=500,
                         detail="AI returned a chapter without a title"
@@ -897,28 +983,36 @@ Use exactly this structure:
                 lessons = chapter_data.get("lessons")
 
                 if not isinstance(lessons, list):
+
                     raise HTTPException(
                         status_code=500,
                         detail="AI returned invalid lessons"
                     )
 
-                if len(lessons) < 2 or len(lessons) > 4:
+                # Dynamic: 1–6 lessons
+                if len(lessons) < 1 or len(lessons) > 6:
+
                     raise HTTPException(
                         status_code=500,
                         detail="AI returned an invalid number of lessons"
                     )
 
-                for lesson_data in lessons:
+                # ==================================================
+                # LESSON VALIDATION
+                # ==================================================
+
+                for lesson_index, lesson_data in enumerate(lessons):
 
                     if not isinstance(lesson_data, dict):
+
                         raise HTTPException(
                             status_code=500,
                             detail="AI returned an invalid lesson"
                         )
 
-                    # -----------------------------------------
-                    # REQUIRED LESSON FIELDS
-                    # -----------------------------------------
+                    # ----------------------------------------------
+                    # REQUIRED FIELDS
+                    # ----------------------------------------------
 
                     for field in [
                         "title",
@@ -929,19 +1023,47 @@ Use exactly this structure:
                     ]:
 
                         if field not in lesson_data:
+
                             raise HTTPException(
                                 status_code=500,
                                 detail=f"Lesson is missing: {field}"
                             )
 
-                    # -----------------------------------------
+                    # ----------------------------------------------
+                    # TITLE
+                    # ----------------------------------------------
+
+                    if not isinstance(
+                        lesson_data["title"],
+                        str
+                    ):
+
+                        lesson_data["title"] = str(
+                            lesson_data["title"]
+                        )
+
+                    # ----------------------------------------------
+                    # DESCRIPTION
+                    # ----------------------------------------------
+
+                    if not isinstance(
+                        lesson_data["description"],
+                        str
+                    ):
+
+                        lesson_data["description"] = str(
+                            lesson_data["description"]
+                        )
+
+                    # ----------------------------------------------
                     # CONTENT
-                    # -----------------------------------------
+                    # ----------------------------------------------
 
                     if not isinstance(
                         lesson_data["content"],
                         str
                     ):
+
                         lesson_data["content"] = str(
                             lesson_data["content"]
                         )
@@ -953,51 +1075,53 @@ Use exactly this structure:
                             or "This lesson introduces the key concepts of this topic."
                         )
 
-                    # -----------------------------------------
-                    # DESCRIPTION
-                    # -----------------------------------------
-
-                    if not isinstance(
-                        lesson_data["description"],
-                        str
-                    ):
-                        lesson_data["description"] = str(
-                            lesson_data["description"]
-                        )
-
-                    # -----------------------------------------
+                    # ----------------------------------------------
                     # DURATION
-                    # -----------------------------------------
+                    # ----------------------------------------------
 
                     if not isinstance(
                         lesson_data["duration"],
                         int
                     ):
+
                         lesson_data["duration"] = 20
 
                     if lesson_data["duration"] < 5:
+
                         lesson_data["duration"] = 5
 
-                    # -----------------------------------------
+                    # ----------------------------------------------
                     # XP
-                    # -----------------------------------------
+                    # ----------------------------------------------
 
                     if not isinstance(
                         lesson_data["xp"],
                         int
                     ):
+
                         lesson_data["xp"] = 30
 
                     if lesson_data["xp"] < 0:
+
                         lesson_data["xp"] = 0
 
-        # -------------------------------------------------
+        # ==================================================
         # SUCCESS
-        # -------------------------------------------------
+        # ==================================================
 
         print(
             "LEARNING PATH GENERATED SUCCESSFULLY:",
             learning_path.get("course_title")
+        )
+
+        print(
+            "LEVEL COUNT:",
+            len(levels)
+        )
+
+        print(
+            "COURSE REQUEST:",
+            prompt
         )
 
         return {
