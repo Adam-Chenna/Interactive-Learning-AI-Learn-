@@ -9,9 +9,9 @@ from models.course import Course
 from models.level import Level
 from models.chapter import Chapter
 from models.lesson import Lesson
+from models.user import User
 
 from services.auth import get_current_user
-from models.user import User
 
 
 router = APIRouter(
@@ -20,7 +20,10 @@ router = APIRouter(
 )
 
 
-def build_course_data(course: Course, db: Session):
+def build_course_data(
+    course: Course,
+    db: Session
+):
 
     result = {
         "id": course.id,
@@ -81,9 +84,13 @@ def build_course_data(course: Course, db: Session):
                     "content": lesson.content or ""
                 })
 
-            level_data["chapters"].append(chapter_data)
+            level_data["chapters"].append(
+                chapter_data
+            )
 
-        result["levels"].append(level_data)
+        result["levels"].append(
+            level_data
+        )
 
     return result
 
@@ -114,7 +121,10 @@ def get_courses(
 
     except Exception as error:
 
-        print("GET COURSES ERROR:", str(error))
+        print(
+            "GET COURSES ERROR:",
+            str(error)
+        )
 
         raise HTTPException(
             status_code=500,
@@ -129,20 +139,40 @@ def get_course(
     current_user: User = Depends(get_current_user)
 ):
 
-    course = (
-        db.query(Course)
-        .filter(
-            Course.id == course_id,
-            Course.created_by == current_user.id
-        )
-        .first()
-    )
+    try:
 
-    if not course:
+        course = (
+            db.query(Course)
+            .filter(
+                Course.id == course_id,
+                Course.created_by == current_user.id
+            )
+            .first()
+        )
+
+        if not course:
+
+            raise HTTPException(
+                status_code=404,
+                detail="Course not found"
+            )
+
+        return build_course_data(
+            course,
+            db
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+
+        print(
+            "GET COURSE ERROR:",
+            str(error)
+        )
 
         raise HTTPException(
-            status_code=404,
-            detail="Course not found"
+            status_code=500,
+            detail="Could not load course"
         )
-
-    return build_course_data(course, db)
