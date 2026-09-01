@@ -1538,103 +1538,151 @@ const handleGenerateLearningPath =
 
 
         {/* =================================================
-            EMPTY LEARNING PATH
-        ================================================= */}
-
+    PERSONALIZED LEARNING PATH / GENERATED COURSE
+================================================= */}
 {!learningPath && (
-
-  <section className="learning-path-section">
-
-    <div className="section-header">
-
-      <div>
-
-        <span className="section-eyebrow">
-          YOUR JOURNEY
-        </span>
-
-        <h2>
-          Personalized Learning Path
-        </h2>
-
-        <p>
-          {saveMessage
-            ? "Your AI-generated course is now available in My Courses."
-            : "Generate a personalized course and it will be added directly to My Courses."}
-        </p>
-
-      </div>
-
-    </div>
-
+  <section className="learning-path-section personalized-path-card">
 
     {saveMessage ? (
+      <div className="personalized-success-wrapper">
 
-      <div className="ai-success">
+        <div className="personalized-course-visual">
+          <div className="ai-orbit orbit-one"></div>
+          <div className="ai-orbit orbit-two"></div>
 
-        ✓ {saveMessage}
-
-      </div>
-
-    ) : (
-
-      <div className="empty-learning-path">
-
-        <div className="empty-path-icon">
-          ✦
+          <div className="personalized-ai-icon">
+            ✦
+          </div>
         </div>
 
-        <h3>
-          Your learning path starts here
-        </h3>
+        <div className="personalized-course-content">
 
-        <p>
-          Tell the AI what you want to learn above.
-          Your generated course will automatically
-          appear inside My Courses.
-        </p>
+          <div className="personalized-top-row">
+            <span className="personalized-badge">
+              ✦ AI PERSONALIZED
+            </span>
+
+            <span className="personalized-status">
+              ✓ READY TO LEARN
+            </span>
+          </div>
+
+          <h2>
+            Your personalized course is ready
+          </h2>
+
+          <p className="personalized-description">
+            {saveMessage}
+          </p>
+
+          <div className="personalized-features">
+
+            <div className="personalized-feature">
+              <span>🎯</span>
+              <div>
+                <strong>Personalized</strong>
+                <small>Built for your goal</small>
+              </div>
+            </div>
+
+            <div className="personalized-feature">
+              <span>📚</span>
+              <div>
+                <strong>Structured Path</strong>
+                <small>Lessons & chapters</small>
+              </div>
+            </div>
+
+            <div className="personalized-feature">
+              <span>⚡</span>
+              <div>
+                <strong>Track Progress</strong>
+                <small>Earn XP as you learn</small>
+              </div>
+            </div>
+
+          </div>
+
+          {savedCourseId && (
+            <div className="personalized-actions">
+
+              <button
+                type="button"
+                className="see-course-btn"
+                onClick={() =>
+                  navigate(`/courses/${savedCourseId}`)
+                }
+              >
+                <span className="see-course-icon">
+                  ▶
+                </span>
+
+                <span>
+                  See Course
+                </span>
+
+                <span className="see-course-arrow">
+                  →
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="personalized-clear-btn"
+                onClick={() => {
+                  setSaveMessage("");
+                  setSavedCourseId(null);
+                }}
+              >
+                Clear
+              </button>
+
+            </div>
+          )}
+
+        </div>
 
       </div>
+    ) : (
+      <>
 
-    )}
+        <div className="section-header">
+          <div>
+            <span className="section-eyebrow">
+              YOUR JOURNEY
+            </span>
 
+            <h2>
+              Personalized Learning Path
+            </h2>
 
-    {savedCourseId && (
+            <p>
+              Generate a personalized course and it will
+              be added directly to My Courses.
+            </p>
+          </div>
+        </div>
 
-      <div className="learning-path-actions">
+        <div className="empty-learning-path">
+          <div className="empty-path-icon">
+            ✦
+          </div>
 
-        <button
-          type="button"
-          className="view-course-btn"
-          onClick={() =>
-            navigate(
-              `/courses/${savedCourseId}`
-            )
-          }
-        >
-          Open Course →
-        </button>
+          <h3>
+            Your learning path starts here
+          </h3>
 
+          <p>
+            Tell the AI what you want to learn above.
+            Your generated course will automatically
+            appear inside My Courses.
+          </p>
+        </div>
 
-        <button
-          type="button"
-          className="clear-path-btn"
-          onClick={() => {
-
-            setSaveMessage("");
-            setSavedCourseId(null);
-
-          }}
-        >
-          Clear
-        </button>
-
-      </div>
-
+      </>
     )}
 
   </section>
-
 )}
 
 
