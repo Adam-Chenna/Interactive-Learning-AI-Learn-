@@ -26,14 +26,6 @@ import MyCourses from "./pages/MyCourses";
 // API URL
 // =====================================================
 
-// Handles:
-// VITE_API_URL=http://127.0.0.1:8000
-// VITE_API_URL=http://127.0.0.1:8000/
-// VITE_API_URL=http://127.0.0.1:8000/api
-//
-// All of them become:
-// http://127.0.0.1:8000
-
 const API_URL = (
   import.meta.env.VITE_API_URL ||
   "http://127.0.0.1:8000"
@@ -62,7 +54,7 @@ const getToken = () => {
 
 
 // =====================================================
-// API JSON HELPER
+// API RESPONSE HELPER
 // =====================================================
 
 const getResponseData = async (response) => {
@@ -83,7 +75,7 @@ const getResponseData = async (response) => {
 
 
 // =====================================================
-// LOGOUT HELPER
+// CLEAR AUTH
 // =====================================================
 
 const clearAuth = () => {
@@ -112,9 +104,7 @@ function ProtectedRoute({ children }) {
 // =====================================================
 
 function Dashboard() {
-
   const navigate = useNavigate();
-
 
   // ===================================================
   // COURSES
@@ -123,7 +113,6 @@ function Dashboard() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-
   // ===================================================
   // USER
   // ===================================================
@@ -131,7 +120,6 @@ function Dashboard() {
   const [userName, setUserName] = useState(
     localStorage.getItem("user_name") || "Student"
   );
-
 
   // ===================================================
   // PROGRESS
@@ -145,7 +133,6 @@ function Dashboard() {
 
   const [progressLoading, setProgressLoading] =
     useState(true);
-
 
   // ===================================================
   // AI LEARNING PATH
@@ -177,14 +164,12 @@ function Dashboard() {
   // ===================================================
 
   useEffect(() => {
-
     const savedName =
       localStorage.getItem("user_name");
 
     setUserName(
       savedName || "Student"
     );
-
   }, []);
 
 
@@ -193,92 +178,31 @@ function Dashboard() {
   // ===================================================
 
   useEffect(() => {
-
     const loadCourses = async () => {
-
-      try {
-
-        const response = await fetch(
-          `${API_URL}/api/courses/`
-        );
-
-        const data =
-          await getResponseData(response);
-
-        if (!response.ok) {
-
-          throw new Error(
-            data.detail ||
-            "Failed to load courses"
-          );
-
-        }
-
-        setCourses(
-          Array.isArray(data)
-            ? data
-            : []
-        );
-
-      } catch (error) {
-
-        console.error(
-          "Failed to load courses:",
-          error
-        );
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    };
-
-    loadCourses();
-
-  }, []);
-
-
-  // ===================================================
-  // LOAD USER PROGRESS
-  // ===================================================
-
-  useEffect(() => {
-
-    const loadProgress = async () => {
-
       const token = getToken();
 
       if (!token) {
-
-        setProgressLoading(false);
-
+        setLoading(false);
         return;
-
       }
 
       try {
-
         const response = await fetch(
-          `${API_URL}/api/progress/me`,
+          `${API_URL}/api/courses/`,
           {
             method: "GET",
 
             headers: {
-              Authorization:
-                `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
-
 
         // ---------------------------------------------
         // AUTH ERROR
         // ---------------------------------------------
 
         if (response.status === 401) {
-
           clearAuth();
 
           navigate(
@@ -289,26 +213,101 @@ function Dashboard() {
           );
 
           return;
-
         }
-
 
         const data =
           await getResponseData(response);
 
+        // ---------------------------------------------
+        // OTHER ERROR
+        // ---------------------------------------------
 
         if (!response.ok) {
+          throw new Error(
+            data.detail ||
+            "Failed to load courses"
+          );
+        }
 
+        // ---------------------------------------------
+        // SET COURSES
+        // ---------------------------------------------
+
+        setCourses(
+          Array.isArray(data)
+            ? data
+            : []
+        );
+
+      } catch (error) {
+        console.error(
+          "Failed to load courses:",
+          error
+        );
+
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCourses();
+
+  }, [navigate]);
+
+
+  // ===================================================
+  // LOAD USER PROGRESS
+  // ===================================================
+
+  useEffect(() => {
+    const loadProgress = async () => {
+      const token = getToken();
+
+      if (!token) {
+        setProgressLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/progress/me`,
+          {
+            method: "GET",
+
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        // ---------------------------------------------
+        // AUTH ERROR
+        // ---------------------------------------------
+
+        if (response.status === 401) {
+          clearAuth();
+
+          navigate(
+            "/login",
+            {
+              replace: true,
+            }
+          );
+
+          return;
+        }
+
+        const data =
+          await getResponseData(response);
+
+        if (!response.ok) {
           throw new Error(
             data.detail ||
             "Failed to load progress"
           );
-
         }
 
-
         setProgress({
-
           completed_lessons:
             data.completed_lessons || 0,
 
@@ -321,24 +320,18 @@ function Dashboard() {
             )
               ? data.completed_lesson_ids
               : [],
-
         });
 
       } catch (error) {
-
         console.error(
           "Progress error:",
           error
         );
 
       } finally {
-
         setProgressLoading(false);
-
       }
-
     };
-
 
     loadProgress();
 
@@ -350,63 +343,40 @@ function Dashboard() {
   // ===================================================
 
   const getCourseProgress = (course) => {
-
     let totalLessons = 0;
     let completedLessons = 0;
 
-
     if (!course?.levels) {
-
       return {
         percentage: 0,
         completed: 0,
         total: 0,
       };
-
     }
 
+    course.levels.forEach((level) => {
+      if (!level?.chapters) {
+        return;
+      }
 
-    course.levels.forEach(
-      (level) => {
-
-        if (!level?.chapters) {
+      level.chapters.forEach((chapter) => {
+        if (!chapter?.lessons) {
           return;
         }
 
+        chapter.lessons.forEach((lesson) => {
+          totalLessons++;
 
-        level.chapters.forEach(
-          (chapter) => {
-
-            if (!chapter?.lessons) {
-              return;
-            }
-
-
-            chapter.lessons.forEach(
-              (lesson) => {
-
-                totalLessons++;
-
-
-                if (
-                  progress.completed_lesson_ids.includes(
-                    lesson.id
-                  )
-                ) {
-
-                  completedLessons++;
-
-                }
-
-              }
-            );
-
+          if (
+            progress.completed_lesson_ids.includes(
+              lesson.id
+            )
+          ) {
+            completedLessons++;
           }
-        );
-
-      }
-    );
-
+        });
+      });
+    });
 
     const percentage =
       totalLessons > 0
@@ -418,19 +388,11 @@ function Dashboard() {
           )
         : 0;
 
-
     return {
-
       percentage,
-
-      completed:
-        completedLessons,
-
-      total:
-        totalLessons,
-
+      completed: completedLessons,
+      total: totalLessons,
     };
-
   };
 
 
@@ -439,18 +401,14 @@ function Dashboard() {
   // ===================================================
 
   const completedCoursesCount =
-    courses.filter(
-      (course) => {
+    courses.filter((course) => {
+      const courseProgress =
+        getCourseProgress(course);
 
-        const courseProgress =
-          getCourseProgress(course);
-
-        return (
-          courseProgress.percentage >= 100
-        );
-
-      }
-    ).length;
+      return (
+        courseProgress.percentage >= 100
+      );
+    }).length;
 
 
   // ===================================================
@@ -458,7 +416,6 @@ function Dashboard() {
   // ===================================================
 
   const handleLogout = () => {
-
     clearAuth();
 
     navigate(
@@ -467,7 +424,6 @@ function Dashboard() {
         replace: true,
       }
     );
-
   };
 
 
@@ -475,33 +431,84 @@ function Dashboard() {
   // GENERATE AI LEARNING PATH
   // ===================================================
 
-  const handleGenerateLearningPath =
-    async () => {
+  // ============================================================
+// App.jsx
+// handleGenerateLearningPath POORA REPLACE KARO
+// ============================================================
 
-      const prompt =
-        aiPrompt.trim();
+const handleGenerateLearningPath =
+  async () => {
 
+    const prompt =
+      aiPrompt.trim();
 
-      // ---------------------------------------------
-      // VALIDATION
-      // ---------------------------------------------
+    if (!prompt) {
 
-      if (!prompt) {
+      setAiError(
+        "Please tell the AI what you want to learn."
+      );
 
-        setAiError(
-          "Please tell the AI what you want to learn."
+      return;
+    }
+
+    const token =
+      getToken();
+
+    if (!token) {
+
+      navigate(
+        "/login",
+        {
+          replace: true,
+        }
+      );
+
+      return;
+    }
+
+    setGeneratingPath(true);
+    setAiError("");
+    setSaveMessage("");
+    setLearningPath(null);
+    setSavedCourseId(null);
+
+    try {
+
+      // ======================================================
+      // GENERATE COURSE
+      // ======================================================
+
+      const generateResponse =
+        await fetch(
+          `${API_URL}/api/ai-tutor/generate-learning-path`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            body: JSON.stringify({
+              prompt,
+            }),
+          }
         );
 
-        return;
+      const generatedData =
+        await getResponseData(
+          generateResponse
+        );
 
-      }
+      if (
+        generateResponse.status ===
+        401
+      ) {
 
-
-      const token =
-        getToken();
-
-
-      if (!token) {
+        clearAuth();
 
         navigate(
           "/login",
@@ -511,168 +518,180 @@ function Dashboard() {
         );
 
         return;
+      }
+
+      if (!generateResponse.ok) {
+
+        throw new Error(
+          generatedData.detail ||
+            `Server returned ${generateResponse.status}`
+        );
 
       }
 
+      const generatedPath =
+        generatedData.learning_path;
 
-      setGeneratingPath(true);
+      if (!generatedPath) {
 
-      setAiError("");
+        throw new Error(
+          "AI did not return a learning path."
+        );
 
-      setSaveMessage("");
+      }
+
+      // ======================================================
+      // AUTO SAVE COURSE
+      // ======================================================
+
+      const saveResponse =
+        await fetch(
+          `${API_URL}/api/ai-tutor/save-learning-path`,
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+
+              Authorization:
+                `Bearer ${token}`,
+            },
+
+            body: JSON.stringify({
+              learning_path:
+                generatedPath,
+            }),
+          }
+        );
+
+      const saveData =
+        await getResponseData(
+          saveResponse
+        );
+
+      if (
+        saveResponse.status ===
+        401
+      ) {
+
+        clearAuth();
+
+        navigate(
+          "/login",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      if (!saveResponse.ok) {
+
+        throw new Error(
+          saveData.detail ||
+            `Could not save course (${saveResponse.status})`
+        );
+
+      }
+
+      // ======================================================
+      // COURSE SAVED
+      // ======================================================
+
+      const newCourseId =
+        saveData.course_id;
+
+      setSavedCourseId(
+        newCourseId || null
+      );
 
       setLearningPath(null);
 
-      setSavedCourseId(null);
+      setAiPrompt("");
 
+      setSaveMessage(
+        `Course "${generatedPath.course_title}" has been added to My Courses successfully!`
+      );
 
-      try {
+      // ======================================================
+      // REFRESH MY COURSES
+      // ======================================================
 
-        // IMPORTANT:
-        // Backend endpoint is:
-        // POST /api/ai-tutor/generate-learning-path
+      const coursesResponse =
+        await fetch(
+          `${API_URL}/api/courses/`,
+          {
+            method: "GET",
 
-        const endpoint =
-          `${API_URL}/api/ai-tutor/generate-learning-path`;
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
 
-
-        console.log(
-          "AI Learning Path URL:",
-          endpoint
+            cache: "no-store",
+          }
         );
 
+      if (
+        coursesResponse.status ===
+        401
+      ) {
 
-        const response =
-          await fetch(
-            endpoint,
-            {
-              method: "POST",
+        clearAuth();
 
-              headers: {
-                "Content-Type":
-                  "application/json",
+        navigate(
+          "/login",
+          {
+            replace: true,
+          }
+        );
 
-                Authorization:
-                  `Bearer ${token}`,
-              },
+        return;
+      }
 
-              body: JSON.stringify({
-                prompt: prompt,
-              }),
+      if (coursesResponse.ok) {
 
-            }
-          );
-
-
-        // ---------------------------------------------
-        // READ RESPONSE SAFELY
-        // ---------------------------------------------
-
-        const data =
+        const coursesData =
           await getResponseData(
-            response
+            coursesResponse
           );
 
-
-        // ---------------------------------------------
-        // AUTH ERROR
-        // ---------------------------------------------
-
-        if (
-          response.status === 401
-        ) {
-
-          clearAuth();
-
-          navigate(
-            "/login",
-            {
-              replace: true,
-            }
-          );
-
-          return;
-
-        }
-
-
-        // ---------------------------------------------
-        // OTHER ERROR
-        // ---------------------------------------------
-
-        if (!response.ok) {
-
-          console.error(
-            "Generate Learning Path API Error:",
-            response.status,
-            data
-          );
-
-
-          throw new Error(
-            data.detail ||
-            `Server returned ${response.status}`
-          );
-
-        }
-
-
-        // ---------------------------------------------
-        // CHECK AI RESPONSE
-        // ---------------------------------------------
-
-        if (
-          !data.learning_path
-        ) {
-
-          console.error(
-            "Invalid learning path response:",
-            data
-          );
-
-
-          throw new Error(
-            "AI did not return a learning path."
-          );
-
-        }
-
-
-        // ---------------------------------------------
-        // SUCCESS
-        // ---------------------------------------------
-
-        console.log(
-          "Generated Learning Path:",
-          data.learning_path
+        setCourses(
+          Array.isArray(
+            coursesData
+          )
+            ? coursesData
+            : Array.isArray(
+                coursesData?.courses
+              )
+            ? coursesData.courses
+            : []
         );
-
-
-        setLearningPath(
-          data.learning_path
-        );
-
-
-      } catch (error) {
-
-        console.error(
-          "AI Learning Path Error:",
-          error
-        );
-
-
-        setAiError(
-          error.message ||
-          "Something went wrong while generating the learning path."
-        );
-
-      } finally {
-
-        setGeneratingPath(false);
 
       }
 
-    };
+    } catch (error) {
+
+      console.error(
+        "AI Learning Path Error:",
+        error
+      );
+
+      setAiError(
+        error.message ||
+          "Something went wrong while creating your course."
+      );
+
+    } finally {
+
+      setGeneratingPath(
+        false
+      );
+
+    }
+  };
 
 
   // ===================================================
@@ -686,13 +705,9 @@ function Dashboard() {
         return;
       }
 
-
-      const token =
-        getToken();
-
+      const token = getToken();
 
       if (!token) {
-
         navigate(
           "/login",
           {
@@ -701,28 +716,20 @@ function Dashboard() {
         );
 
         return;
-
       }
 
-
       setSavingPath(true);
-
       setSaveMessage("");
-
       setAiError("");
 
-
       try {
-
         const endpoint =
           `${API_URL}/api/ai-tutor/save-learning-path`;
-
 
         console.log(
           "Save Learning Path URL:",
           endpoint
         );
-
 
         const response =
           await fetch(
@@ -739,30 +746,20 @@ function Dashboard() {
               },
 
               body: JSON.stringify({
-
                 learning_path:
                   learningPath,
-
               }),
-
             }
           );
 
-
         const data =
-          await getResponseData(
-            response
-          );
-
+          await getResponseData(response);
 
         // ---------------------------------------------
         // AUTH ERROR
         // ---------------------------------------------
 
-        if (
-          response.status === 401
-        ) {
-
+        if (response.status === 401) {
           clearAuth();
 
           navigate(
@@ -773,30 +770,24 @@ function Dashboard() {
           );
 
           return;
-
         }
-
 
         // ---------------------------------------------
         // API ERROR
         // ---------------------------------------------
 
         if (!response.ok) {
-
           console.error(
             "Save Learning Path Error:",
             response.status,
             data
           );
 
-
           throw new Error(
             data.detail ||
             `Server returned ${response.status}`
           );
-
         }
-
 
         // ---------------------------------------------
         // SUCCESS
@@ -806,33 +797,50 @@ function Dashboard() {
           data.course_id
         );
 
-
         setSaveMessage(
           "Personalized course saved successfully!"
         );
-
 
         // ---------------------------------------------
         // REFRESH COURSES
         // ---------------------------------------------
 
         try {
-
           const coursesResponse =
             await fetch(
-              `${API_URL}/api/courses/`
+              `${API_URL}/api/courses/`,
+              {
+                method: "GET",
+
+                headers: {
+                  Authorization:
+                    `Bearer ${token}`,
+                },
+              }
             );
 
+          if (
+            coursesResponse.status === 401
+          ) {
+            clearAuth();
+
+            navigate(
+              "/login",
+              {
+                replace: true,
+              }
+            );
+
+            return;
+          }
 
           if (
             coursesResponse.ok
           ) {
-
             const coursesData =
               await getResponseData(
                 coursesResponse
               );
-
 
             setCourses(
               Array.isArray(
@@ -841,28 +849,20 @@ function Dashboard() {
                 ? coursesData
                 : []
             );
-
           }
 
-        } catch (
-          refreshError
-        ) {
-
+        } catch (refreshError) {
           console.error(
             "Course refresh error:",
             refreshError
           );
-
         }
 
-
       } catch (error) {
-
         console.error(
           "Save Learning Path Error:",
           error
         );
-
 
         setAiError(
           error.message ||
@@ -870,11 +870,8 @@ function Dashboard() {
         );
 
       } finally {
-
         setSavingPath(false);
-
       }
-
     };
 
 
@@ -886,13 +883,9 @@ function Dashboard() {
     () => {
 
       setLearningPath(null);
-
       setAiError("");
-
       setSaveMessage("");
-
       setSavedCourseId(null);
-
     };
 
 
@@ -901,16 +894,13 @@ function Dashboard() {
   // ===================================================
 
   return (
-
     <div className="app">
-
 
       {/* =================================================
           SIDEBAR
       ================================================= */}
 
       <aside className="sidebar">
-
 
         {/* LOGO */}
 
@@ -994,9 +984,7 @@ function Dashboard() {
 
           <button
             className="nav-item logout"
-            onClick={
-              handleLogout
-            }
+            onClick={handleLogout}
             type="button"
           >
             <span>↪</span>
@@ -1013,7 +1001,6 @@ function Dashboard() {
       ================================================= */}
 
       <main className="main">
-
 
         {/* =================================================
             TOPBAR
@@ -1093,11 +1080,9 @@ function Dashboard() {
                 if (
                   courses.length > 0
                 ) {
-
                   navigate(
                     `/courses/${courses[0].id}`
                   );
-
                 }
 
               }}
@@ -1226,16 +1211,10 @@ function Dashboard() {
             </div>
 
 
-            {/* ERROR */}
-
             {aiError && (
-
               <div className="ai-error">
-
                 {aiError}
-
               </div>
-
             )}
 
           </div>
@@ -1250,7 +1229,6 @@ function Dashboard() {
         {learningPath && (
 
           <section className="learning-path-section">
-
 
             <div className="section-header">
 
@@ -1274,9 +1252,7 @@ function Dashboard() {
 
 
               <div className="generated-course-level">
-
                 {learningPath.level}
-
               </div>
 
             </div>
@@ -1285,7 +1261,6 @@ function Dashboard() {
             {/* COURSE INFORMATION */}
 
             <div className="generated-course-info">
-
 
               <div className="generated-info-card">
 
@@ -1321,9 +1296,7 @@ function Dashboard() {
                   </strong>
 
                   <p>
-                    {learningPath.estimated_hours}
-                    {" "}
-                    hours
+                    {learningPath.estimated_hours} hours
                   </p>
 
                 </div>
@@ -1363,9 +1336,7 @@ function Dashboard() {
 
                   <div
                     className="generated-level"
-                    key={
-                      `${level.title}-${levelIndex}`
-                    }
+                    key={`${level.title}-${levelIndex}`}
                   >
 
                     <div className="generated-level-header">
@@ -1400,9 +1371,7 @@ function Dashboard() {
 
                           <div
                             className="generated-chapter"
-                            key={
-                              `${chapter.title}-${chapterIndex}`
-                            }
+                            key={`${chapter.title}-${chapterIndex}`}
                           >
 
                             <div className="generated-chapter-header">
@@ -1428,9 +1397,7 @@ function Dashboard() {
 
                                   <div
                                     className="generated-lesson"
-                                    key={
-                                      `${lesson.title}-${lessonIndex}`
-                                    }
+                                    key={`${lesson.title}-${lessonIndex}`}
                                   >
 
                                     <div className="lesson-icon">
@@ -1446,11 +1413,9 @@ function Dashboard() {
 
 
                                       {lesson.description && (
-
                                         <p>
                                           {lesson.description}
                                         </p>
-
                                       )}
 
 
@@ -1576,53 +1541,101 @@ function Dashboard() {
             EMPTY LEARNING PATH
         ================================================= */}
 
-        {!learningPath && (
+{!learningPath && (
 
-          <section className="learning-path-section">
+  <section className="learning-path-section">
 
-            <div className="section-header">
+    <div className="section-header">
 
-              <div>
+      <div>
 
-                <span className="section-eyebrow">
-                  YOUR JOURNEY
-                </span>
+        <span className="section-eyebrow">
+          YOUR JOURNEY
+        </span>
 
-                <h2>
-                  Personalized Learning Path
-                </h2>
+        <h2>
+          Personalized Learning Path
+        </h2>
 
-                <p>
-                  Your AI-generated learning journey
-                  will appear here.
-                </p>
+        <p>
+          {saveMessage
+            ? "Your AI-generated course is now available in My Courses."
+            : "Generate a personalized course and it will be added directly to My Courses."}
+        </p>
 
-              </div>
+      </div>
 
-            </div>
+    </div>
 
 
-            <div className="empty-learning-path">
+    {saveMessage ? (
 
-              <div className="empty-path-icon">
-                ✦
-              </div>
+      <div className="ai-success">
 
-              <h3>
-                Your learning path starts here
-              </h3>
+        ✓ {saveMessage}
 
-              <p>
-                Tell the AI what you want to learn
-                above, and we'll build a course
-                specifically for you.
-              </p>
+      </div>
 
-            </div>
+    ) : (
 
-          </section>
+      <div className="empty-learning-path">
 
-        )}
+        <div className="empty-path-icon">
+          ✦
+        </div>
+
+        <h3>
+          Your learning path starts here
+        </h3>
+
+        <p>
+          Tell the AI what you want to learn above.
+          Your generated course will automatically
+          appear inside My Courses.
+        </p>
+
+      </div>
+
+    )}
+
+
+    {savedCourseId && (
+
+      <div className="learning-path-actions">
+
+        <button
+          type="button"
+          className="view-course-btn"
+          onClick={() =>
+            navigate(
+              `/courses/${savedCourseId}`
+            )
+          }
+        >
+          Open Course →
+        </button>
+
+
+        <button
+          type="button"
+          className="clear-path-btn"
+          onClick={() => {
+
+            setSaveMessage("");
+            setSavedCourseId(null);
+
+          }}
+        >
+          Clear
+        </button>
+
+      </div>
+
+    )}
+
+  </section>
+
+)}
 
 
         {/* =================================================
@@ -1630,7 +1643,6 @@ function Dashboard() {
         ================================================= */}
 
         <section className="stats-section">
-
 
           {/* STREAK */}
 
@@ -1666,11 +1678,9 @@ function Dashboard() {
             <div>
 
               <strong>
-
                 {progressLoading
                   ? "..."
                   : progress.total_xp}
-
               </strong>
 
               <p>
@@ -1693,11 +1703,9 @@ function Dashboard() {
             <div>
 
               <strong>
-
                 {progressLoading
                   ? "..."
                   : progress.completed_lessons}
-
               </strong>
 
               <p>
@@ -1736,7 +1744,6 @@ function Dashboard() {
       </main>
 
     </div>
-
   );
 }
 
@@ -1746,13 +1753,10 @@ function Dashboard() {
 // =====================================================
 
 function App() {
-
   return (
-
     <BrowserRouter>
 
       <Routes>
-
 
         {/* LOGIN */}
 
@@ -1893,9 +1897,7 @@ function App() {
       </Routes>
 
     </BrowserRouter>
-
   );
-
 }
 
 

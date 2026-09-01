@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+// pages/MyCourses.jsx
+
+import { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = (
+  import.meta.env.VITE_API_URL ||
+  "http://127.0.0.1:8000"
+)
+  .replace(/\/+$/, "")
+  .replace(/\/api$/, "");
 
-// =====================================================
-// AUTH HELPER
-// =====================================================
 
 const getToken = () => {
   const token = localStorage.getItem("access_token");
@@ -22,48 +26,31 @@ const getToken = () => {
 };
 
 
-// =====================================================
-// MY COURSES
-// =====================================================
-
 function MyCourses() {
+
   const navigate = useNavigate();
 
-  // ===================================================
-  // STATE
-  // ===================================================
-
   const [courses, setCourses] = useState([]);
-
-  const [completedLessonIds, setCompletedLessonIds] =
-    useState([]);
-
+  const [completedLessonIds, setCompletedLessonIds] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
-
   const [refreshing, setRefreshing] = useState(false);
 
 
-  // ===================================================
-  // AUTH ERROR
-  // ===================================================
+  const handleAuthError = useCallback(() => {
 
-  const handleAuthError = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user_name");
 
     navigate("/login", {
-      replace: true,
+      replace: true
     });
-  };
+
+  }, [navigate]);
 
 
-  // ===================================================
-  // LOAD COURSES + PROGRESS
-  // ===================================================
+  const loadCourses = useCallback(async () => {
 
-  const loadData = async () => {
     const token = getToken();
 
     if (!token) {
@@ -72,191 +59,174 @@ function MyCourses() {
     }
 
     try {
+
       setError("");
+      setRefreshing(true);
 
-      if (courses.length > 0) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-
-
-      // =================================================
-      // LOAD COURSES
-      // =================================================
-
-      const coursesResponse = await fetch(
+      const response = await fetch(
         `${API_URL}/api/courses/`,
         {
           method: "GET",
-
           headers: {
-            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
           },
-
-          cache: "no-store",
+          cache: "no-store"
         }
       );
 
+      if (response.status === 401) {
 
-      // =================================================
-      // AUTH ERROR
-      // =================================================
-
-      if (coursesResponse.status === 401) {
         handleAuthError();
         return;
       }
 
+      if (!response.ok) {
 
-      if (!coursesResponse.ok) {
         throw new Error(
-          `Failed to load courses (${coursesResponse.status})`
+          `Failed to load courses (${response.status})`
         );
       }
 
-
-      const coursesData =
-        await coursesResponse.json();
-
-
-      console.log(
-        "MY COURSES FROM BACKEND:",
-        coursesData
-      );
-
-
-      // =================================================
-      // HANDLE DIFFERENT BACKEND RESPONSE FORMATS
-      // =================================================
+      const data = await response.json();
 
       let coursesList = [];
 
+      if (Array.isArray(data)) {
 
-      if (Array.isArray(coursesData)) {
-        coursesList = coursesData;
+        coursesList = data;
+
       } else if (
-        coursesData &&
-        Array.isArray(coursesData.courses)
+        data &&
+        Array.isArray(data.courses)
       ) {
-        coursesList = coursesData.courses;
+
+        coursesList = data.courses;
+
       } else if (
-        coursesData &&
-        Array.isArray(coursesData.data)
+        data &&
+        Array.isArray(data.data)
       ) {
-        coursesList = coursesData.data;
+
+        coursesList = data.data;
       }
-
 
       setCourses(coursesList);
-
-
-      // =================================================
-      // LOAD USER PROGRESS
-      // =================================================
-
-      const progressResponse = await fetch(
-        `${API_URL}/api/progress/me`,
-        {
-          method: "GET",
-
-          headers: {
-            "Content-Type": "application/json",
-
-            Authorization:
-              `Bearer ${token}`,
-          },
-
-          cache: "no-store",
-        }
-      );
-
-
-      if (progressResponse.status === 401) {
-        handleAuthError();
-        return;
-      }
-
-
-      if (progressResponse.ok) {
-        const progressData =
-          await progressResponse.json();
-
-
-        console.log(
-          "MY COURSE PROGRESS:",
-          progressData
-        );
-
-
-        setCompletedLessonIds(
-          Array.isArray(
-            progressData.completed_lesson_ids
-          )
-            ? progressData.completed_lesson_ids
-            : []
-        );
-      } else {
-        // Progress failure should NOT prevent
-        // courses from being displayed.
-
-        setCompletedLessonIds([]);
-      }
-
 
     } catch (err) {
 
       console.error(
-        "My Courses error:",
+        "Courses error:",
         err
       );
 
-
       setError(
         err.message ||
-        "Could not load your courses."
+        "Could not load courses."
       );
+
+      setCourses([]);
 
     } finally {
 
       setLoading(false);
       setRefreshing(false);
-
     }
-  };
+
+  }, [handleAuthError]);
 
 
-  // ===================================================
-  // LOAD DATA ON PAGE OPEN
-  // ===================================================
+  const loadProgress = useCallback(async () => {
+
+    const token = getToken();
+
+    if (!token) {
+      return;
+    }
+
+    try {
+
+      const response = await fetch(
+        `${API_URL}/api/progress/me`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`
+          },
+          cache: "no-store"
+        }
+      );
+
+      if (response.status === 401) {
+
+        handleAuthError();
+        return;
+      }
+
+      if (!response.ok) {
+
+        setCompletedLessonIds([]);
+        return;
+      }
+
+      const data = await response.json();
+
+      setCompletedLessonIds(
+        Array.isArray(
+          data.completed_lesson_ids
+        )
+          ? data.completed_lesson_ids
+          : []
+      );
+
+    } catch (err) {
+
+      console.error(
+        "Progress error:",
+        err
+      );
+
+      setCompletedLessonIds([]);
+    }
+
+  }, [handleAuthError]);
+
+
+  const loadData = useCallback(async () => {
+
+    await Promise.all([
+      loadCourses(),
+      loadProgress()
+    ]);
+
+  }, [
+    loadCourses,
+    loadProgress
+  ]);
+
 
   useEffect(() => {
+
     loadData();
-  }, []);
 
+  }, [loadData]);
 
-  // ===================================================
-  // COURSE PROGRESS
-  // ===================================================
 
   const getCourseProgress = (course) => {
 
     let total = 0;
-
     let completed = 0;
-
 
     if (
       !course ||
       !Array.isArray(course.levels)
     ) {
+
       return {
         total: 0,
         completed: 0,
-        percentage: 0,
+        percentage: 0
       };
     }
-
 
     course.levels.forEach((level) => {
 
@@ -267,7 +237,6 @@ function MyCourses() {
         return;
       }
 
-
       level.chapters.forEach((chapter) => {
 
         if (
@@ -277,22 +246,20 @@ function MyCourses() {
           return;
         }
 
-
         chapter.lessons.forEach((lesson) => {
 
           if (!lesson) {
             return;
           }
 
-
           total++;
-
 
           if (
             completedLessonIds.includes(
               lesson.id
             )
           ) {
+
             completed++;
           }
 
@@ -302,136 +269,96 @@ function MyCourses() {
 
     });
 
-
-    const percentage =
-      total > 0
-        ? Math.round(
-            (completed / total) * 100
-          )
-        : 0;
-
-
     return {
       total,
       completed,
-      percentage,
+      percentage:
+        total > 0
+          ? Math.round(
+              (completed / total) * 100
+            )
+          : 0
     };
   };
 
 
-  // ===================================================
-  // COURSE IMAGE
-  // ===================================================
+  const getCourseImage = (
+    title = "",
+    category = ""
+  ) => {
 
-  const getCourseImage = (title = "") => {
+    const text =
+      `${title} ${category}`.toLowerCase();
 
-    const normalizedTitle =
-      title.toLowerCase();
-
-
-    if (
-      normalizedTitle.includes(
-        "python"
-      )
-    ) {
+    if (text.includes("python")) {
       return "/courses/python.png";
     }
 
-
     if (
-      normalizedTitle.includes(
-        "web development"
-      ) ||
-      normalizedTitle.includes(
-        "web development"
-      )
+      text.includes("web development") ||
+      text.includes("frontend") ||
+      text.includes("backend") ||
+      text.includes("html") ||
+      text.includes("css") ||
+      text.includes("javascript")
     ) {
+
       return "/courses/webdevelopment.png";
     }
 
-
     if (
-      normalizedTitle.includes(
-        "artificial intelligence"
-      ) ||
-      normalizedTitle.includes(
-        "machine learning"
-      ) ||
-      normalizedTitle.includes(
-        "ai"
-      )
+      text.includes("artificial intelligence") ||
+      text.includes("machine learning") ||
+      text.includes("deep learning") ||
+      text.includes("ai")
     ) {
+
       return "/courses/ai.jpg";
     }
 
-
-    if (
-      normalizedTitle.includes(
-        "react"
-      )
-    ) {
+    if (text.includes("react")) {
       return "/courses/react.png";
     }
 
-
-    if (
-      normalizedTitle.includes(
-        "data science"
-      )
-    ) {
-      return "/courses/react.png";
+    if (text.includes("data science")) {
+      return "/courses/ai.jpg";
     }
 
-
-    // Generic fallback
     return "/courses/react.png";
   };
 
-
-  // ===================================================
-  // COURSE STATUS
-  // ===================================================
 
   const getCourseStatus = (
     percentage
   ) => {
 
-    if (percentage === 100) {
+    if (percentage >= 100) {
+
       return {
         text: "Completed",
-        className: "completed",
+        className: "completed"
       };
     }
-
 
     if (percentage > 0) {
+
       return {
         text: "In Progress",
-        className: "in-progress",
+        className: "in-progress"
       };
     }
-
 
     return {
       text: "Not Started",
-      className: "not-started",
+      className: "not-started"
     };
   };
 
 
-  // ===================================================
-  // USER NAME
-  // ===================================================
-
   const userName =
-    localStorage.getItem(
-      "user_name"
-    ) || "Student";
+    localStorage.getItem("user_name") ||
+    "Student";
 
-
-  // ===================================================
-  // LOADING SCREEN
-  // ===================================================
 
   if (loading) {
 
@@ -442,7 +369,7 @@ function MyCourses() {
 
           <div className="page-loading">
 
-            <div className="loading-spinner"></div>
+            <div className="loading-spinner" />
 
             <p>
               Loading your courses...
@@ -457,23 +384,11 @@ function MyCourses() {
   }
 
 
-  // ===================================================
-  // UI
-  // ===================================================
-
   return (
 
     <div className="app">
 
-
-      {/* =================================================
-          SIDEBAR
-      ================================================= */}
-
       <aside className="sidebar">
-
-
-        {/* LOGO */}
 
         <div className="logo">
 
@@ -489,10 +404,7 @@ function MyCourses() {
         </div>
 
 
-        {/* NAVIGATION */}
-
         <nav className="nav">
-
 
           <Link
             to="/"
@@ -538,14 +450,10 @@ function MyCourses() {
             Certificates
           </Link>
 
-
         </nav>
 
 
-        {/* SIDEBAR BOTTOM */}
-
         <div className="sidebar-bottom">
-
 
           <Link
             to="/settings"
@@ -559,53 +467,20 @@ function MyCourses() {
           <button
             type="button"
             className="nav-item logout"
-            onClick={() => {
-
-              localStorage.removeItem(
-                "access_token"
-              );
-
-              localStorage.removeItem(
-                "user_name"
-              );
-
-              navigate(
-                "/login",
-                {
-                  replace: true,
-                }
-              );
-
-            }}
+            onClick={handleAuthError}
           >
-
-            <span>
-              ↪
-            </span>
-
+            <span>↪</span>
             Logout
-
           </button>
-
 
         </div>
 
       </aside>
 
 
-      {/* =================================================
-          MAIN CONTENT
-      ================================================= */}
-
       <main className="main">
 
-
-        {/* =================================================
-            TOP BAR
-        ================================================= */}
-
         <header className="topbar">
-
 
           <div>
 
@@ -614,16 +489,14 @@ function MyCourses() {
             </h1>
 
             <p>
-              Continue learning and track your progress.
+              Continue learning and track
+              your progress.
             </p>
 
           </div>
 
 
-          {/* PROFILE */}
-
           <div className="profile">
-
 
             <div className="avatar">
 
@@ -632,7 +505,6 @@ function MyCourses() {
                 .toUpperCase()}
 
             </div>
-
 
             <div>
 
@@ -646,16 +518,10 @@ function MyCourses() {
 
             </div>
 
-
           </div>
-
 
         </header>
 
-
-        {/* =================================================
-            ERROR
-        ================================================= */}
 
         {error && (
 
@@ -677,7 +543,6 @@ function MyCourses() {
 
             </div>
 
-
             <button
               type="button"
               onClick={loadData}
@@ -690,12 +555,7 @@ function MyCourses() {
         )}
 
 
-        {/* =================================================
-            HERO
-        ================================================= */}
-
         <section className="courses-page-hero">
-
 
           <div>
 
@@ -703,33 +563,26 @@ function MyCourses() {
               YOUR LEARNING SPACE
             </span>
 
-
             <h2>
               Keep building your skills.
             </h2>
 
-
             <p>
               Explore your courses, continue
-              lessons, and track how far you've
-              come.
+              lessons, and track how far
+              you've come.
             </p>
-
-
-            {/* GENERATED COURSE NOTE */}
 
             <div
               style={{
                 marginTop: "16px",
                 fontSize: "14px",
-                opacity: 0.85,
+                opacity: 0.85
               }}
             >
-
-              🤖 Courses generated by AI
-              will appear here automatically
-              after you save them.
-
+              🤖 AI-generated courses will
+              appear here automatically after
+              you save them.
             </div>
 
           </div>
@@ -739,16 +592,10 @@ function MyCourses() {
             📚
           </div>
 
-
         </section>
 
 
-        {/* =================================================
-            COURSE HEADER
-        ================================================= */}
-
         <div className="section-header courses-header">
-
 
           <div>
 
@@ -771,64 +618,39 @@ function MyCourses() {
           </div>
 
 
-          <div
+          <button
+            type="button"
+            className="view-all"
+            onClick={loadData}
+            disabled={refreshing}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
+              cursor: refreshing
+                ? "not-allowed"
+                : "pointer",
+              border: "none"
             }}
           >
 
-            {refreshing && (
-              <span
-                style={{
-                  fontSize: "13px",
-                  opacity: 0.7,
-                }}
-              >
-                Updating...
-              </span>
-            )}
+            {refreshing
+              ? "Updating..."
+              : "↻ Refresh"}
 
-
-            <button
-              type="button"
-              className="view-all"
-              onClick={loadData}
-              style={{
-                cursor: "pointer",
-                border: "none",
-              }}
-            >
-
-              ↻ Refresh
-
-            </button>
-
-          </div>
-
+          </button>
 
         </div>
 
-
-        {/* =================================================
-            EMPTY STATE
-        ================================================= */}
 
         {courses.length === 0 ? (
 
           <div className="courses-empty-state">
 
-
             <div className="courses-empty-icon">
               📚
             </div>
 
-
             <h2>
               No courses yet
             </h2>
-
 
             <p>
               Your saved courses will appear
@@ -836,47 +658,29 @@ function MyCourses() {
               learning path to get started.
             </p>
 
-
             <Link
               to="/"
               className="course-continue-button"
             >
-
               Go to Dashboard
-
-              <span>
-                →
-              </span>
-
+              <span>→</span>
             </Link>
-
 
           </div>
 
         ) : (
 
-
-          /* =================================================
-             COURSE GRID
-          ================================================= */
-
           <div className="my-courses-grid">
-
 
             {courses.map((course) => {
 
-
               const progress =
-                getCourseProgress(
-                  course
-                );
-
+                getCourseProgress(course);
 
               const status =
                 getCourseStatus(
                   progress.percentage
                 );
-
 
               return (
 
@@ -885,28 +689,27 @@ function MyCourses() {
                   key={course.id}
                 >
 
-
-                  {/* =================================================
-                      COURSE TOP
-                  ================================================= */}
-
                   <div className="my-course-top">
-
 
                     <div className="my-course-icon">
 
                       <img
-                        src={getCourseImage(
-                          course.title
-                        )}
+                        src={
+                          course.icon &&
+                          course.icon.startsWith("/")
+                            ? course.icon
+                            : getCourseImage(
+                                course.title,
+                                course.category
+                              )
+                        }
                         alt={
                           course.title ||
                           "Course"
                         }
+                        onError={(event) => {
 
-                        onError={(e) => {
-
-                          e.currentTarget.src =
+                          event.currentTarget.src =
                             "/courses/react.png";
 
                         }}
@@ -916,20 +719,15 @@ function MyCourses() {
 
 
                     <span
-                      className={`course-status ${status.className}`}
+                      className={
+                        `course-status ${status.className}`
+                      }
                     >
-
                       {status.text}
-
                     </span>
-
 
                   </div>
 
-
-                  {/* =================================================
-                      CATEGORY
-                  ================================================= */}
 
                   <span className="category">
 
@@ -939,10 +737,6 @@ function MyCourses() {
                   </span>
 
 
-                  {/* =================================================
-                      TITLE
-                  ================================================= */}
-
                   <h3>
 
                     {course.title ||
@@ -950,10 +744,6 @@ function MyCourses() {
 
                   </h3>
 
-
-                  {/* =================================================
-                      DESCRIPTION
-                  ================================================= */}
 
                   <p className="my-course-description">
 
@@ -963,10 +753,6 @@ function MyCourses() {
                   </p>
 
 
-                  {/* =================================================
-                      LEVEL
-                  ================================================= */}
-
                   {course.level && (
 
                     <div
@@ -974,11 +760,12 @@ function MyCourses() {
                         marginTop: "8px",
                         marginBottom: "14px",
                         fontSize: "13px",
-                        opacity: 0.75,
+                        opacity: 0.75
                       }}
                     >
 
                       Level:{" "}
+
                       <strong>
                         {course.level}
                       </strong>
@@ -988,21 +775,13 @@ function MyCourses() {
                   )}
 
 
-                  {/* =================================================
-                      PROGRESS INFO
-                  ================================================= */}
-
                   <div className="my-course-progress-info">
 
-
                     <span>
-                      {progress.percentage}%
-                      {" "}Complete
+                      {progress.percentage}% Complete
                     </span>
 
-
                     <span>
-
                       {progress.completed}
                       {" / "}
                       {progress.total}
@@ -1010,35 +789,23 @@ function MyCourses() {
                       {progress.total === 1
                         ? "lesson"
                         : "lessons"}
-
                     </span>
-
 
                   </div>
 
 
-                  {/* =================================================
-                      PROGRESS BAR
-                  ================================================= */}
-
                   <div className="progress">
-
 
                     <div
                       className="progress-fill"
                       style={{
                         width:
-                          `${progress.percentage}%`,
+                          `${progress.percentage}%`
                       }}
                     />
 
-
                   </div>
 
-
-                  {/* =================================================
-                      COURSE BUTTON
-                  ================================================= */}
 
                   <Link
                     to={`/courses/${course.id}`}
@@ -1047,18 +814,15 @@ function MyCourses() {
 
                     {progress.percentage === 0
                       ? "Start Learning"
-                      : progress.percentage === 100
+                      : progress.percentage >= 100
                       ? "Review Course"
                       : "Continue Learning"}
-
 
                     <span>
                       →
                     </span>
 
-
                   </Link>
-
 
                 </div>
 
@@ -1066,16 +830,13 @@ function MyCourses() {
 
             })}
 
-
           </div>
 
         )}
 
-
       </main>
 
     </div>
-
   );
 }
 

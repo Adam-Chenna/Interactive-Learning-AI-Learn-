@@ -1,6 +1,10 @@
+// ============================================================
+// pages/Lesson.jsx
+// IMPORT REPLACE
+// ============================================================
 
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 
 function Lesson() {
   const { lessonId } = useParams();
@@ -11,10 +15,6 @@ function Lesson() {
   const [completed, setCompleted] = useState(false);
   const [completing, setCompleting] = useState(false);
 
-  // AI Tutor
-  const [question, setQuestion] = useState("");
-  const [aiAnswer, setAiAnswer] = useState("");
-  const [askingAI, setAskingAI] = useState(false);
 
   // =========================
   // LOAD LESSON
@@ -34,6 +34,8 @@ function Lesson() {
         const data = await response.json();
 
         setLesson(data);
+        
+        
 
         // Load user progress
         const token = localStorage.getItem("access_token");
@@ -77,84 +79,6 @@ function Lesson() {
     loadLesson();
   }, [lessonId]);
 
-  // =========================
-  // ASK AI TUTOR
-  // =========================
-
-  const askAITutor = async (e) => {
-    e.preventDefault();
-
-    if (!question.trim() || askingAI) {
-      return;
-    }
-
-    const userQuestion = question.trim();
-
-    setAskingAI(true);
-    setAiAnswer("");
-
-    try {
-      const token =
-        localStorage.getItem("access_token");
-
-      if (
-        !token ||
-        token === "undefined" ||
-        token === "null"
-      ) {
-        alert(
-          "Please login first to use AI Tutor."
-        );
-
-        setAskingAI(false);
-        return;
-      }
-
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/ai-tutor/ask`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-
-          body: JSON.stringify({
-            question: userQuestion,
-            lesson_id: Number(lessonId),
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.detail ||
-            "Failed to get AI response"
-        );
-      }
-
-      setAiAnswer(
-        data.answer ||
-          "AI Tutor could not generate a response."
-      );
-
-      setQuestion("");
-    } catch (error) {
-      console.error(
-        "AI Tutor error:",
-        error
-      );
-
-      setAiAnswer(
-        "Sorry, AI Tutor could not respond right now. Please try again."
-      );
-    } finally {
-      setAskingAI(false);
-    }
-  };
 
   // =========================
   // MARK LESSON COMPLETE
@@ -303,116 +227,17 @@ function Lesson() {
             LESSON CONTENT
         ========================= */}
 
-        <article className="lesson-content">
-
-          {(lesson.content || "")
-            .split("\n")
-            .map((line, index) => (
-              <p key={index}>
-                {line || "\u00A0"}
-              </p>
-            ))}
-
-        </article>
-
-        {/* =========================
-    AI TUTOR
-========================= */}
-
-<section className="lesson-ai-tutor">
-
-  <div className="ai-tutor-title">
-
-    <div className="ai-tutor-small-icon">
-      ✦
-    </div>
-
-    <div>
-      <span className="ai-tutor-label">
-        AI LEARNING ASSISTANT
-      </span>
-
-      <h2>
-        Ask AI Tutor
-      </h2>
-
-      <p>
-        Stuck on something? Get a clear explanation
-        based on this lesson.
+       <article className="lesson-content">
+  {(lesson.content || "")
+    .split("\n")
+    .map((line, index) => (
+      <p key={index}>
+        {line || "\u00A0"}
       </p>
-    </div>
+    ))}
+</article>
 
-  </div>
-
-  <form
-    className="lesson-ai-form"
-    onSubmit={askAITutor}
-  >
-
-    <div className="ai-input-wrapper">
-
-      <span className="ai-input-icon">
-        ✨
-      </span>
-
-      <input
-        type="text"
-        value={question}
-        onChange={(e) =>
-          setQuestion(e.target.value)
-        }
-        placeholder="Ask anything about this lesson..."
-        disabled={askingAI}
-      />
-
-    </div>
-
-    <button
-      type="submit"
-      disabled={
-        askingAI ||
-        !question.trim()
-      }
-    >
-      {askingAI ? (
-        <>
-          <span className="ai-loading-dot" />
-          Thinking...
-        </>
-      ) : (
-        <>
-          Ask AI
-          <span>→</span>
-        </>
-      )}
-    </button>
-
-  </form>
-
-  {aiAnswer && (
-    <div className="lesson-ai-answer">
-
-      <div className="ai-answer-icon">
-        ✦
-      </div>
-
-      <div className="ai-answer-content">
-
-        <div className="ai-answer-header">
-          <strong>AI Tutor</strong>
-          <span>Just now</span>
-        </div>
-
-        <p>
-          {aiAnswer}
-        </p>
-
-      </div>
-
-    </div>
-  )}
-
-</section>
+  
 
         {/* =========================
             COMPLETION
