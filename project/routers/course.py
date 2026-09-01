@@ -1,3 +1,5 @@
+# routers/course.py
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -8,10 +10,9 @@ from models.level import Level
 from models.chapter import Chapter
 from models.lesson import Lesson
 
+from services.auth import get_current_user
+from models.user import User
 
-# =====================================================
-# ROUTER
-# =====================================================
 
 router = APIRouter(
     prefix="/api/courses",
@@ -19,18 +20,7 @@ router = APIRouter(
 )
 
 
-# =====================================================
-# BUILD COMPLETE COURSE DATA
-# =====================================================
-
-def build_course_data(
-    course: Course,
-    db: Session
-):
-
-    # -------------------------------------------------
-    # COURSE
-    # -------------------------------------------------
+def build_course_data(course: Course, db: Session):
 
     result = {
         "id": course.id,
@@ -40,29 +30,16 @@ def build_course_data(
         "level": course.level,
         "icon": course.icon,
         "description": course.description,
+        "created_by": course.created_by,
         "levels": []
     }
 
-
-    # =================================================
-    # GET LEVELS
-    # =================================================
-
     levels = (
         db.query(Level)
-        .filter(
-            Level.course_id == course.id
-        )
-        .order_by(
-            Level.id.asc()
-        )
+        .filter(Level.course_id == course.id)
+        .order_by(Level.id.asc())
         .all()
     )
-
-
-    # =================================================
-    # BUILD LEVELS
-    # =================================================
 
     for level in levels:
 
@@ -72,26 +49,12 @@ def build_course_data(
             "chapters": []
         }
 
-
-        # =================================================
-        # GET CHAPTERS
-        # =================================================
-
         chapters = (
             db.query(Chapter)
-            .filter(
-                Chapter.level_id == level.id
-            )
-            .order_by(
-                Chapter.id.asc()
-            )
+            .filter(Chapter.level_id == level.id)
+            .order_by(Chapter.id.asc())
             .all()
         )
-
-
-        # =================================================
-        # BUILD CHAPTERS
-        # =================================================
 
         for chapter in chapters:
 
@@ -101,98 +64,57 @@ def build_course_data(
                 "lessons": []
             }
 
-
-            # =================================================
-            # GET LESSONS
-            # =================================================
-
             lessons = (
                 db.query(Lesson)
-                .filter(
-                    Lesson.chapter_id == chapter.id
-                )
-                .order_by(
-                    Lesson.id.asc()
-                )
+                .filter(Lesson.chapter_id == chapter.id)
+                .order_by(Lesson.id.asc())
                 .all()
             )
-
-
-            # =================================================
-            # BUILD LESSONS
-            # =================================================
 
             for lesson in lessons:
 
                 chapter_data["lessons"].append({
-
                     "id": lesson.id,
-
                     "title": lesson.title,
-
                     "duration": lesson.duration or 0,
-
                     "xp": lesson.xp or 0,
-
                     "content": lesson.content or ""
-
                 })
 
+            level_data["chapters"].append(chapter_data)
 
-            level_data["chapters"].append(
-                chapter_data
-            )
-
-
-        result["levels"].append(
-            level_data
-        )
-
+        result["levels"].append(level_data)
 
     return result
 
 
-# =====================================================
-# GET ALL COURSES
-# =====================================================
-
 @router.get("/")
 def get_courses(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     try:
 
         courses = (
             db.query(Course)
+            .filter(
+                Course.created_by == current_user.id
+            )
             .order_by(
-                Course.id.asc()
+                Course.id.desc()
             )
             .all()
         )
 
-
-        result = []
-
-        for course in courses:
-
-            result.append(
-                build_course_data(
-                    course,
-                    db
-                )
-            )
-
-
-        return result
-
+        return [
+            build_course_data(course, db)
+            for course in courses
+        ]
 
     except Exception as error:
 
-        print(
-            "GET COURSES ERROR:",
-            str(error)
-        )
+        print("GET COURSES ERROR:", str(error))
 
         raise HTTPException(
             status_code=500,
@@ -200,24 +122,21 @@ def get_courses(
         )
 
 
-# =====================================================
-# GET SINGLE COURSE
-# =====================================================
-
 @router.get("/{course_id}")
 def get_course(
     course_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
 
     course = (
         db.query(Course)
         .filter(
-            Course.id == course_id
+            Course.id == course_id,
+            Course.created_by == current_user.id
         )
         .first()
     )
-
 
     if not course:
 
@@ -226,8 +145,4 @@ def get_course(
             detail="Course not found"
         )
 
-
-    return build_course_data(
-        course,
-        db
-    )
+    return build_course_data(course, db)
