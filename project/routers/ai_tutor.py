@@ -479,7 +479,6 @@ def generate_learning_path(
     data: LearningPathRequest,
     current_user: User = Depends(get_current_user)
 ):
-
     prompt = (data.prompt or "").strip()
 
     if not prompt:
@@ -494,20 +493,18 @@ def generate_learning_path(
             detail="AI service is not configured"
         )
 
+    # ---------------------------------------------------------
+    # COMPACT SYSTEM PROMPT
+    # ---------------------------------------------------------
+
     system_prompt = """
 You are LearnAI Personalized Learning Path Generator.
 
-Create ONE personalized online course based on the student's request.
+Create ONE personalized online course based strictly on the student's request.
 
-The course must be relevant to the exact requested topic.
+Return ONLY valid JSON. No Markdown. No code fences. No explanation.
 
-Return ONLY valid JSON.
-Do not return Markdown.
-Do not use code fences.
-Do not add any text before or after the JSON.
-
-The JSON object must contain exactly these top-level fields:
-
+Required top-level fields:
 course_title
 description
 category
@@ -515,55 +512,58 @@ level
 estimated_hours
 levels
 
-level must be exactly one of:
+level must be exactly:
 Beginner
 Intermediate
 Advanced
 
-Create exactly 2 levels.
+STRUCTURE:
+- Exactly 2 levels
+- Exactly 2 chapters per level
+- Exactly 2 lessons per chapter
+- Total exactly 8 lessons
 
-Each level must contain exactly 2 chapters.
-
-Each chapter must contain exactly 2 lessons.
-
-Each lesson must contain exactly these fields:
-
+Each lesson must contain:
 title
 description
 content
 duration
 xp
 
-duration must be an integer number of minutes.
+duration = integer minutes
+xp = integer
 
-xp must be an integer.
+LESSON CONTENT:
+Each lesson should teach its specific topic and include:
+1. Concept explanation
+2. Why it matters
+3. How it works
+4. Practical example
+5. Subject-specific example
+6. Code example only when relevant
+7. Common beginner mistake
+8. Short takeaway
 
-Lesson content must teach the requested topic and include:
+Content should be concise but useful, around 120-180 words per lesson.
 
-- concept explanation
-- why it matters
-- how it works
-- practical example
-- subject-specific example
-- programming example when relevant
-- common beginner mistake
-- short takeaway
+IMPORTANT:
+- Adapt the curriculum to the student's exact request.
+- Do not use a fixed generic curriculum.
+- Avoid duplicate lessons.
+- Avoid unrelated topics.
+- Progress logically from foundations to practical/advanced topics.
+- If the request mentions prior knowledge, skip unnecessary basics.
+- If the request is programming-related, include relevant coding practice.
+- If the request is non-programming, use practical real-world examples.
 
-Keep each lesson content around 150 to 250 words.
-
-Avoid duplicate lessons.
-Avoid unrelated topics.
-Avoid filler.
-Make the progression logical.
-
-Use this exact JSON structure:
+Return JSON matching this structure:
 
 {
   "course_title": "string",
   "description": "string",
   "category": "string",
   "level": "Beginner",
-  "estimated_hours": 10,
+  "estimated_hours": 5,
   "levels": [
     {
       "title": "string",
@@ -657,6 +657,10 @@ Use this exact JSON structure:
 
     try:
 
+        # -----------------------------------------------------
+        # GROQ REQUEST
+        # -----------------------------------------------------
+
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
 
@@ -667,11 +671,7 @@ Use this exact JSON structure:
                 },
                 {
                     "role": "user",
-                    "content": (
-                        "Create a personalized course for this "
-                        "student request:\n\n"
-                        + prompt
-                    )
+                    "content": prompt
                 }
             ],
 
@@ -681,8 +681,14 @@ Use this exact JSON structure:
                 "type": "json_object"
             },
 
-            max_tokens=12000
+            # IMPORTANT:
+            # Keep output comfortably below the 8000 TPM limit.
+            max_tokens=3500
         )
+
+        # -----------------------------------------------------
+        # GET RESPONSE
+        # -----------------------------------------------------
 
         raw_response = (
             response.choices[0]
@@ -691,13 +697,24 @@ Use this exact JSON structure:
         )
 
         print(
-            "LEARNING PATH RAW RESPONSE:",
-            raw_response[:5000]
+            "LEARNING PATH RESPONSE LENGTH:",
+            len(raw_response)
         )
 
-        # -----------------------------------------
+        print(
+            "LEARNING PATH RAW RESPONSE:",
+            raw_response[:3000]
+        )
+
+        if not raw_response:
+            raise HTTPException(
+                status_code=502,
+                detail="AI returned an empty learning path"
+            )
+
+        # -----------------------------------------------------
         # PARSE JSON
-        # -----------------------------------------
+        # -----------------------------------------------------
 
         try:
 
@@ -706,28 +723,28 @@ Use this exact JSON structure:
         except json.JSONDecodeError as error:
 
             print(
-                "JSON PARSE ERROR:",
+                "LEARNING PATH JSON ERROR:",
                 str(error)
             )
 
             print(
                 "RAW RESPONSE:",
-                raw_response[:10000]
+                raw_response[:5000]
             )
 
             raise HTTPException(
-                status_code=500,
+                status_code=502,
                 detail="AI returned invalid course data"
             )
 
-        # -----------------------------------------
-        # BASIC VALIDATION
-        # -----------------------------------------
+        # -----------------------------------------------------
+        # TOP LEVEL VALIDATION
+        # -----------------------------------------------------
 
         if not isinstance(learning_path, dict):
 
             raise HTTPException(
-                status_code=500,
+                status_code=502,
                 detail="AI returned invalid course structure"
             )
 
@@ -745,13 +762,13 @@ Use this exact JSON structure:
             if field not in learning_path:
 
                 raise HTTPException(
-                    status_code=500,
+                    status_code=502,
                     detail=f"AI course is missing: {field}"
                 )
 
-        # -----------------------------------------
+        # -----------------------------------------------------
         # COURSE LEVEL
-        # -----------------------------------------
+        # -----------------------------------------------------
 
         if learning_path["level"] not in [
             "Beginner",
@@ -760,48 +777,56 @@ Use this exact JSON structure:
         ]:
 
             raise HTTPException(
-                status_code=500,
+                status_code=502,
                 detail="AI returned an invalid course level"
             )
 
-        # -----------------------------------------
-        # LEVELS
-        # -----------------------------------------
+        # -----------------------------------------------------
+        # LEVEL VALIDATION
+        # -----------------------------------------------------
 
         levels = learning_path["levels"]
 
         if not isinstance(levels, list):
 
             raise HTTPException(
-                status_code=500,
+                status_code=502,
                 detail="AI returned invalid levels"
             )
 
         if len(levels) != 2:
 
             raise HTTPException(
-                status_code=500,
-                detail=f"AI returned {len(levels)} levels. Expected exactly 2."
+                status_code=502,
+                detail=(
+                    f"AI returned {len(levels)} levels. "
+                    "Expected exactly 2."
+                )
             )
 
-        # -----------------------------------------
-        # CHAPTERS
-        # -----------------------------------------
+        # -----------------------------------------------------
+        # CHAPTER VALIDATION
+        # -----------------------------------------------------
 
-        for level_index, level_data in enumerate(levels, start=1):
+        for level_index, level_data in enumerate(
+            levels,
+            start=1
+        ):
 
             if not isinstance(level_data, dict):
 
                 raise HTTPException(
-                    status_code=500,
+                    status_code=502,
                     detail=f"Invalid level at position {level_index}"
                 )
 
-            if not level_data.get("title"):
+            level_title = level_data.get("title")
+
+            if not isinstance(level_title, str) or not level_title.strip():
 
                 raise HTTPException(
-                    status_code=500,
-                    detail=f"Level {level_index} has no title"
+                    status_code=502,
+                    detail=f"Level {level_index} has no valid title"
                 )
 
             chapters = level_data.get("chapters")
@@ -809,23 +834,26 @@ Use this exact JSON structure:
             if not isinstance(chapters, list):
 
                 raise HTTPException(
-                    status_code=500,
-                    detail=f"Level {level_index} has invalid chapters"
+                    status_code=502,
+                    detail=(
+                        f"Level {level_index} has invalid chapters"
+                    )
                 )
 
             if len(chapters) != 2:
 
                 raise HTTPException(
-                    status_code=500,
+                    status_code=502,
                     detail=(
                         f"Level {level_index} returned "
-                        f"{len(chapters)} chapters. Expected exactly 2."
+                        f"{len(chapters)} chapters. "
+                        "Expected exactly 2."
                     )
                 )
 
-            # -----------------------------------------
-            # LESSONS
-            # -----------------------------------------
+            # -------------------------------------------------
+            # LESSON VALIDATION
+            # -------------------------------------------------
 
             for chapter_index, chapter_data in enumerate(
                 chapters,
@@ -835,20 +863,26 @@ Use this exact JSON structure:
                 if not isinstance(chapter_data, dict):
 
                     raise HTTPException(
-                        status_code=500,
+                        status_code=502,
                         detail=(
                             f"Invalid chapter {chapter_index} "
                             f"in level {level_index}"
                         )
                     )
 
-                if not chapter_data.get("title"):
+                chapter_title = chapter_data.get("title")
+
+                if (
+                    not isinstance(chapter_title, str)
+                    or not chapter_title.strip()
+                ):
 
                     raise HTTPException(
-                        status_code=500,
+                        status_code=502,
                         detail=(
                             f"Chapter {chapter_index} "
-                            f"in level {level_index} has no title"
+                            f"in level {level_index} "
+                            "has no valid title"
                         )
                     )
 
@@ -857,26 +891,29 @@ Use this exact JSON structure:
                 if not isinstance(lessons, list):
 
                     raise HTTPException(
-                        status_code=500,
+                        status_code=502,
                         detail=(
                             f"Invalid lessons in chapter "
-                            f"{chapter_index}"
+                            f"{chapter_index}, level {level_index}"
                         )
                     )
 
                 if len(lessons) != 2:
 
                     raise HTTPException(
-                        status_code=500,
+                        status_code=502,
                         detail=(
-                            f"Chapter {chapter_index} "
-                            f"in level {level_index} returned "
+                            f"Chapter {chapter_index} in level "
+                            f"{level_index} returned "
                             f"{len(lessons)} lessons. "
-                            f"Expected exactly 2."
+                            "Expected exactly 2."
                         )
                     )
 
-                for lesson_data in lessons:
+                for lesson_index, lesson_data in enumerate(
+                    lessons,
+                    start=1
+                ):
 
                     if not isinstance(
                         lesson_data,
@@ -884,8 +921,11 @@ Use this exact JSON structure:
                     ):
 
                         raise HTTPException(
-                            status_code=500,
-                            detail="Invalid lesson"
+                            status_code=502,
+                            detail=(
+                                f"Invalid lesson {lesson_index} "
+                                f"in chapter {chapter_index}"
+                            )
                         )
 
                     required_lesson_fields = [
@@ -901,13 +941,52 @@ Use this exact JSON structure:
                         if field not in lesson_data:
 
                             raise HTTPException(
-                                status_code=500,
+                                status_code=502,
                                 detail=(
-                                    f"Lesson is missing: {field}"
+                                    f"Lesson {lesson_index} "
+                                    f"is missing: {field}"
                                 )
                             )
 
+                    # -----------------------------------------
+                    # TITLE
+                    # -----------------------------------------
+
+                    if not isinstance(
+                        lesson_data["title"],
+                        str
+                    ):
+
+                        lesson_data["title"] = str(
+                            lesson_data["title"]
+                        )
+
+                    if not lesson_data["title"].strip():
+
+                        raise HTTPException(
+                            status_code=502,
+                            detail=(
+                                f"Lesson {lesson_index} "
+                                "has an empty title"
+                            )
+                        )
+
+                    # -----------------------------------------
+                    # DESCRIPTION
+                    # -----------------------------------------
+
+                    if not isinstance(
+                        lesson_data["description"],
+                        str
+                    ):
+
+                        lesson_data["description"] = str(
+                            lesson_data["description"]
+                        )
+
+                    # -----------------------------------------
                     # CONTENT
+                    # -----------------------------------------
 
                     if not isinstance(
                         lesson_data["content"],
@@ -925,18 +1004,9 @@ Use this exact JSON structure:
                             or "Lesson content unavailable."
                         )
 
-                    # DESCRIPTION
-
-                    if not isinstance(
-                        lesson_data["description"],
-                        str
-                    ):
-
-                        lesson_data["description"] = str(
-                            lesson_data["description"]
-                        )
-
+                    # -----------------------------------------
                     # DURATION
+                    # -----------------------------------------
 
                     if not isinstance(
                         lesson_data["duration"],
@@ -947,10 +1017,15 @@ Use this exact JSON structure:
 
                     lesson_data["duration"] = max(
                         5,
-                        lesson_data["duration"]
+                        min(
+                            lesson_data["duration"],
+                            180
+                        )
                     )
 
+                    # -----------------------------------------
                     # XP
+                    # -----------------------------------------
 
                     if not isinstance(
                         lesson_data["xp"],
@@ -961,8 +1036,15 @@ Use this exact JSON structure:
 
                     lesson_data["xp"] = max(
                         0,
-                        lesson_data["xp"]
+                        min(
+                            lesson_data["xp"],
+                            500
+                        )
                     )
+
+        # -----------------------------------------------------
+        # SUCCESS
+        # -----------------------------------------------------
 
         print(
             "LEARNING PATH GENERATED SUCCESSFULLY:",
@@ -978,9 +1060,16 @@ Use this exact JSON structure:
             "learning_path": learning_path
         }
 
-    # -----------------------------------------
-    # GROQ BAD REQUEST
-    # -----------------------------------------
+    # ---------------------------------------------------------
+    # HTTP EXCEPTIONS
+    # ---------------------------------------------------------
+
+    except HTTPException:
+        raise
+
+    # ---------------------------------------------------------
+    # GROQ RATE / TOKEN LIMIT
+    # ---------------------------------------------------------
 
     except Exception as error:
 
@@ -993,16 +1082,34 @@ Use this exact JSON structure:
 
         traceback.print_exc()
 
+        # 413 / TPM
+        if (
+            "413" in error_text
+            or "rate_limit_exceeded" in error_text
+            or "tokens per minute" in error_text
+        ):
+
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    "AI request is too large for the current "
+                    "Groq token limit. Please try a shorter "
+                    "learning request."
+                )
+            )
+
+        # Groq JSON validation
         if "json_validate_failed" in error_text:
 
             raise HTTPException(
                 status_code=502,
                 detail=(
-                    "AI could not generate a valid learning "
-                    "path JSON. Please try again."
+                    "AI could not generate valid learning-path JSON. "
+                    "Please try again."
                 )
             )
 
+        # Generic AI error
         raise HTTPException(
             status_code=500,
             detail=(
